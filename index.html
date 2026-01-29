@@ -15,7 +15,6 @@
             --border: #e2e8f0;
         }
 
-        /* 暗黑模式变量 */
         body.dark {
             --bg: #0f172a; --card: #1e293b;
             --primary: #818cf8; --accent: #f472b6;
@@ -44,29 +43,22 @@
         }
 
         /* 顶部开关 */
-        .theme-switch {
-            position: absolute; top: -30px; right: 0; cursor: pointer;
-            font-size: 1.2rem; opacity: 0.7;
-        }
+        .theme-switch { position: absolute; top: -30px; right: 0; cursor: pointer; font-size: 1.2rem; opacity: 0.7; }
         .theme-switch:hover { opacity: 1; transform: scale(1.1); }
 
-        /* 顶部语录 */
+        /* 语录 */
         .quote-box {
-            grid-area: quote;
-            background: var(--card); padding: 35px;
+            grid-area: quote; background: var(--card); padding: 35px;
             border-radius: 12px; box-shadow: var(--shadow);
             text-align: center; position: relative;
             border-left: 5px solid var(--primary); overflow: hidden;
         }
         .quote-content { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; min-height: 2rem; }
         .quote-author { color: var(--accent); font-style: italic; font-size: 0.9rem; }
-        .timer-bar {
-            position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary);
-            width: 0%; animation: timeFlow 30s linear infinite;
-        }
+        .timer-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary); width: 0%; animation: timeFlow 30s linear infinite; }
         @keyframes timeFlow { from {width: 0%} to {width: 100%} }
 
-        /* 左侧面板 */
+        /* 左侧 */
         .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 20px; }
         .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid transparent; }
         body.dark .card { border-color: var(--border); }
@@ -78,13 +70,11 @@
             font-family: 'JetBrains Mono', monospace; border: 1px solid var(--primary);
         }
         
-        /* 经验条 */
         .xp-container { margin: 10px 0; }
         .xp-info { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; }
         .xp-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
         .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; }
 
-        /* 勋章墙 (新功能) */
         .badge-grid {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 15px;
             background: rgba(0,0,0,0.03); padding: 10px; border-radius: 8px;
@@ -101,7 +91,6 @@
             white-space: nowrap; z-index: 10; pointer-events: none;
         }
 
-        /* 传送门 */
         .quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
         .q-link {
             text-decoration: none; background: var(--border); color: var(--text-main);
@@ -110,7 +99,6 @@
         }
         .q-link:hover { background: var(--border); color: var(--primary); transform: translateY(-2px); border: 1px solid var(--primary);}
 
-        /* 统计与日历 */
         .rating-stats { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; }
         .rs-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace;}
         .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;}
@@ -155,6 +143,7 @@
             padding: 12px 20px; background: var(--card); border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-left: 4px solid #ccc;
             border: 1px solid var(--border); border-left-width: 4px;
+            position: relative;
         }
         .rating-tag {
             font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
@@ -164,16 +153,48 @@
         .link-prob { color: var(--text-light); } .link-prob:hover { text-decoration: underline; }
         .link-sol { color: var(--primary); font-weight: bold; } .link-sol:hover { text-decoration: underline; }
 
+        /* 删除按钮 */
+        .btn-del {
+            cursor: pointer; color: #cbd5e1; font-size: 1.2rem; margin-left: 15px; font-weight: bold;
+        }
+        .btn-del:hover { color: var(--accent); }
+
         .footer-msg {
             margin: 40px 0 20px 0; text-align: center; color: var(--text-light);
             font-size: 0.9rem; letter-spacing: 1px; font-family: 'Noto Serif SC', serif;
             grid-column: 1 / -1;
         }
 
-        /* 彩带特效容器 */
-        #confetti-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999;
+        /* 牛客风 AC 弹窗 */
+        .ac-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            backdrop-filter: blur(5px);
         }
+        .ac-modal.show { display: flex; animation: fadeIn 0.3s; }
+        
+        /* 纯 CSS/SVG 画的小牛 */
+        .ac-cow-container {
+            width: 200px; height: 200px; position: relative;
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .ac-text {
+            color: #fff; font-size: 2rem; font-weight: bold; margin-top: 20px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5); font-family: 'JetBrains Mono', monospace;
+            animation: slideUp 0.5s ease 0.2s backwards;
+        }
+        .ac-subtext {
+            color: #ddd; font-size: 1rem; margin-top: 10px;
+            animation: slideUp 0.5s ease 0.3s backwards;
+        }
+
+        @keyframes bounceIn { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 彩带 */
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
 
         @media (max-width: 800px) {
             .container { grid-template-columns: 1fr; grid-template-areas: "quote" "sidebar" "main"; }
@@ -184,6 +205,40 @@
 <body>
 
 <canvas id="confetti-canvas"></canvas>
+
+<!-- AC 弹窗 -->
+<div class="ac-modal" id="acModal" onclick="closeAC()">
+    <div class="ac-cow-container">
+        <!-- SVG 小牛 -->
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- 身体 -->
+            <circle cx="100" cy="110" r="60" fill="#fff" stroke="#333" stroke-width="4"/>
+            <!-- 斑点 -->
+            <path d="M60,110 Q70,90 90,110 T110,130" fill="none" stroke="#333" stroke-width="0" fill-opacity="0.2"/>
+            <circle cx="70" cy="90" r="10" fill="#333"/>
+            <circle cx="130" cy="120" r="15" fill="#333"/>
+            <!-- 耳朵 -->
+            <ellipse cx="40" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(-20 40 90)"/>
+            <ellipse cx="160" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(20 160 90)"/>
+            <!-- 牛角 -->
+            <path d="M60,70 Q50,40 70,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+            <path d="M140,70 Q150,40 130,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+            <!-- 眼睛 -->
+            <circle cx="80" cy="100" r="5" fill="#333"/>
+            <circle cx="120" cy="100" r="5" fill="#333"/>
+            <!-- 鼻子 -->
+            <ellipse cx="100" cy="130" rx="25" ry="15" fill="#fca5a5" stroke="#333" stroke-width="2"/>
+            <circle cx="90" cy="130" r="3" fill="#333"/>
+            <circle cx="110" cy="130" r="3" fill="#333"/>
+            <!-- 竖大拇指的手 -->
+            <path d="M140,150 L160,140 L165,120 Q175,110 185,125 L180,150 Z" fill="#fff" stroke="#333" stroke-width="3"/>
+            <rect x="160" y="140" width="20" height="20" rx="5" fill="#fff" stroke="#333" stroke-width="3"/>
+            <text x="165" y="155" font-size="15">👍</text>
+        </svg>
+    </div>
+    <div class="ac-text">AC！恭喜通过！</div>
+    <div class="ac-subtext">点击任意处关闭</div>
+</div>
 
 <div class="container">
     <div class="theme-switch" onclick="toggleTheme()">🌓</div>
@@ -212,9 +267,7 @@
             </div>
 
             <!-- 勋章墙 -->
-            <div class="badge-grid" id="badgeGrid">
-                <!-- JS生成 -->
-            </div>
+            <div class="badge-grid" id="badgeGrid"></div>
 
             <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
                 <span style="margin-right:15px;">🏆 AC: <b id="totalAC">0</b></span>
@@ -269,7 +322,7 @@
                 <input type="text" id="probLink" placeholder="原题链接">
                 <input type="text" id="solLink" placeholder="我的代码/博客链接 (战报必备)">
             </div>
-            <button class="btn-submit" onclick="submitAC()">✅ 确认 AC (发射彩带!)</button>
+            <button class="btn-submit" onclick="submitAC()">✅ 确认 AC</button>
         </div>
 
         <h3 style="margin:0;">🗓️ 时光轨迹</h3>
@@ -280,7 +333,7 @@
 </div>
 
 <script>
-    const DB_KEY = "algo_v6_badges";
+    const DB_KEY = "algo_v7_cow";
     
     // 配置库
     const QUOTES = [
@@ -300,7 +353,6 @@
         "2200": { color: "#ef4444", label: "2100+", xp: 100 }
     };
 
-    // 勋章配置
     const BADGES = [
         { id: "b1", icon: "🌱", title: "初出茅庐", check: (d) => d.logs.length >= 1 },
         { id: "b2", icon: "🔥", title: "持之以恒", check: (d) => getStreak(d) >= 3 },
@@ -315,7 +367,6 @@
     let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [] };
     let quoteIdx = 0;
 
-    /* --- 初始化 --- */
     window.onload = () => {
         if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
         loadData();
@@ -336,25 +387,17 @@
         setTimeout(() => { elC.innerText = q.t; elA.innerText = `—— ${q.a}`; elC.style.opacity = 1; elA.style.opacity = 1; }, 300);
     }
 
-    /* --- 数据逻辑 --- */
     function loadData() {
         const saved = localStorage.getItem(DB_KEY);
         if (saved) appData = JSON.parse(saved);
         else {
-            const old = localStorage.getItem("algo_v5_pro");
+            const old = localStorage.getItem("algo_v6_badges");
             if(old) appData = JSON.parse(old);
         }
     }
     function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
 
-    function getStreak(d) {
-        // 简化版连胜计算
-        let streak = 0;
-        const now = new Date();
-        // 实际逻辑太复杂，这里简单处理：如果有今天或昨天的记录，就+1，否则归零
-        // 为了演示效果，这里使用 calGrid 计算的逻辑
-        return parseInt(document.getElementById('streakDays')?.innerText || 0); 
-    }
+    function getStreak(d) { return parseInt(document.getElementById('streakDays')?.innerText || 0); }
     function getTodayCount(d) {
         const today = new Date().toISOString().split('T')[0];
         return d.logs.filter(l => l.date.startsWith(today)).length;
@@ -365,6 +408,30 @@
         if (!val) return;
         appData.todos.push({ id: Date.now(), text: val, date: new Date().toISOString().split('T')[0], done: false });
         document.getElementById('todoInput').value = '';
+        saveData();
+    }
+
+    // --- 删除记录功能 (新) ---
+    function deleteLog(id) {
+        if(!confirm("确定要删除这条记录吗？XP也会被扣除哦！")) return;
+        
+        const idx = appData.logs.findIndex(l => l.id === id);
+        if(idx !== -1) {
+            const log = appData.logs[idx];
+            appData.xp = Math.max(0, appData.xp - log.xp); // 扣分
+            
+            // 重新计算等级
+            const lv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
+            appData.level = lv;
+
+            appData.logs.splice(idx, 1);
+            saveData();
+        }
+    }
+
+    function deleteTodo(id) {
+        if(!confirm("删除这个任务？")) return;
+        appData.todos = appData.todos.filter(t => t.id !== id);
         saveData();
     }
     
@@ -380,7 +447,6 @@
         const rVal = document.getElementById('ratingSelect').value;
         const config = RATINGS[rVal];
         
-        // 更新MaxRating
         if(rVal==="2200") appData.maxRating=Math.max(appData.maxRating,2200);
         else if(rVal==="2000") appData.maxRating=Math.max(appData.maxRating,2000);
         else if(rVal==="1750") appData.maxRating=Math.max(appData.maxRating,1750);
@@ -399,25 +465,32 @@
         appData.xp += config.xp;
         
         const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
-        if (nextLv > appData.level) { appData.level = nextLv; alert(`🎉 升级了！LV.${appData.level}`); }
+        if (nextLv > appData.level) { appData.level = nextLv; }
 
         document.getElementById('probName').value = '';
         document.getElementById('probLink').value = '';
         document.getElementById('solLink').value = '';
         
         saveData();
-        fireConfetti(); // 触发彩带
+        showACModal(); // 触发牛客风弹窗
+        fireConfetti();
     }
 
-    /* --- 增强功能 --- */
+    function showACModal() {
+        const modal = document.getElementById('acModal');
+        modal.classList.add('show');
+    }
+    function closeAC() {
+        const modal = document.getElementById('acModal');
+        modal.classList.remove('show');
+    }
+
     function generateAIPrompt() {
         const today = new Date().toISOString().split('T')[0];
         const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
         if (todayLogs.length === 0) return alert("今天还没做题呢！");
-
         const problemList = todayLogs.map(l => `- ${l.name} (${RATINGS[l.ratingVal].label})`).join('\n');
         const prompt = `我今天练习了算法，做了以下 ${todayLogs.length} 道题目：\n${problemList}\n\n我的目前等级是 LV.${appData.level}。请帮我复盘今天的学习情况：\n1. 用幽默鼓励的语气评价。\n2. 给出接下来的学习建议。\n3. 如果我虐菜或受虐，请点醒我。\n4. 结尾给一句扎心的激励语。`;
-        
         navigator.clipboard.writeText(prompt).then(() => alert("🤖 AI 提示词已复制！"));
     }
 
@@ -425,36 +498,17 @@
         const today = new Date().toISOString().split('T')[0];
         const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
         if(todayLogs.length === 0) return alert("今天无记录");
-
-        // 统计分段
         let stats = {};
-        todayLogs.forEach(l => {
-            const label = RATINGS[l.ratingVal].label;
-            stats[label] = (stats[label] || 0) + 1;
-        });
+        todayLogs.forEach(l => { const label = RATINGS[l.ratingVal].label; stats[label] = (stats[label] || 0) + 1; });
         const statStr = Object.entries(stats).map(([k,v]) => `${k} x${v}`).join(' | ');
-
-        // 生成列表
         const listText = todayLogs.map(l => {
-            const label = RATINGS[l.ratingVal].label;
-            const linkText = l.sol ? l.sol : '暂无链接';
+            const label = RATINGS[l.ratingVal].label; const linkText = l.sol ? l.sol : '暂无链接';
             return `✅ [${label}] ${l.name}\n🔗 ${linkText}`;
         }).join('\n\n');
-
-        const text = `
-📅 ${today} 算法打卡
-🔥 总计: ${todayLogs.length}题
-📊 分布: ${statStr}
---------------------
-${listText}
---------------------
-"${document.getElementById('qContent').innerText}"
-(Generated by AlgoDiary)
-`.trim();
-        navigator.clipboard.writeText(text).then(() => alert("📊 详细战报已复制！包含分段统计！"));
+        const text = `📅 ${today} 算法打卡\n🔥 总计: ${todayLogs.length}题\n📊 分布: ${statStr}\n--------------------\n${listText}\n--------------------\n"${document.getElementById('qContent').innerText}"`;
+        navigator.clipboard.writeText(text).then(() => alert("📊 PRO 战报已复制！"));
     }
 
-    /* --- 渲染逻辑 --- */
     function renderUI() {
         document.getElementById('lvNum').innerText = appData.level;
         document.getElementById('curXP').innerText = appData.xp;
@@ -465,7 +519,6 @@ ${listText}
         document.getElementById('xpFill').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
         document.getElementById('totalAC').innerText = appData.logs.length;
 
-        // 渲染勋章
         const badgeBox = document.getElementById('badgeGrid');
         badgeBox.innerHTML = '';
         BADGES.forEach(b => {
@@ -473,7 +526,6 @@ ${listText}
             badgeBox.innerHTML += `<div class="badge ${unlocked?'unlocked':''}" data-title="${b.title}">${b.icon}</div>`;
         });
 
-        // 统计
         const stats = { "1200":0, "1500":0, "1750":0, "2000":0, "2200":0 };
         appData.logs.forEach(l => { if(stats[l.ratingVal]!==undefined) stats[l.ratingVal]++; });
         const statHTML = Object.keys(RATINGS).map(k => {
@@ -482,7 +534,7 @@ ${listText}
         }).join('');
         document.getElementById('ratingStatsBox').innerHTML = statHTML;
 
-        // Logs
+        // Logs 渲染 (含删除按钮)
         const logBox = document.getElementById('logList');
         logBox.innerHTML = '';
         appData.logs.slice(0, 30).forEach(l => {
@@ -491,32 +543,36 @@ ${listText}
             div.className = 'log-card';
             div.style.borderLeftColor = conf.color;
             div.innerHTML = `
-                <div>
+                <div style="flex:1">
                     <div style="font-weight:bold;display:flex;align-items:center;flex-wrap:wrap;">
                         <span class="rating-tag" style="background:${conf.color}">${conf.label}</span>${l.name}
                     </div>
                     <div style="font-size:0.8rem;color:var(--text-light);margin-top:5px;">${l.date.split('T')[0]} · +${l.xp} XP</div>
                 </div>
-                <div class="link-group">
+                <div class="link-group" style="display:flex;align-items:center;">
                     ${l.link ? `<a href="${l.link}" target="_blank" class="link-prob">原题</a>` : ''}
                     ${l.sol ? `<a href="${l.sol}" target="_blank" class="link-sol">代码</a>` : ''}
+                    <div class="btn-del" onclick="deleteLog(${l.id})" title="删除记录">✕</div>
                 </div>
             `;
             logBox.appendChild(div);
         });
         
-        // Todos & Calendar (省略部分重复逻辑，复用即可)
-        renderTodosAndCal();
-    }
-
-    function renderTodosAndCal() {
+        // Todos 渲染 (含删除按钮)
         const todoBox = document.getElementById('todoList');
         todoBox.innerHTML = '';
         const today = new Date().toISOString().split('T')[0];
         const showTodos = appData.todos.filter(t => !t.done || t.date === today);
         if(showTodos.length===0) todoBox.innerHTML='<div style="color:#999;font-size:0.8rem">今日任务已清空</div>';
         showTodos.forEach(t => {
-            todoBox.innerHTML += `<div class="todo-item ${t.done?'done':''}"><span style="font-size:0.9rem">${t.text}</span>${!t.done?`<button class="btn btn-ai" style="padding:4px 8px;font-size:0.75rem" onclick="setPendingTodo('${t.text}')">提交</button>`:'<span>✔️</span>'}</div>`;
+            todoBox.innerHTML += `
+            <div class="todo-item ${t.done?'done':''}">
+                <div style="display:flex;align-items:center;flex:1;">
+                    <span class="btn-del" style="margin-left:0;margin-right:8px;font-size:1rem;" onclick="deleteTodo(${t.id})">✕</span>
+                    <span style="font-size:0.9rem">${t.text}</span>
+                </div>
+                ${!t.done?`<button class="btn btn-ai" style="padding:4px 8px;font-size:0.75rem" onclick="setPendingTodo('${t.text}')">提交</button>`:'<span>✔️</span>'}
+            </div>`;
         });
 
         const grid = document.getElementById('calGrid');
@@ -527,46 +583,42 @@ ${listText}
         const firstDay = new Date(y, m, 1).getDay();
         const daysInMonth = new Date(y, m+1, 0).getDate();
         
-        const stats = {};
-        appData.logs.forEach(l => { stats[l.date.split('T')[0]] = 'active'; });
-        appData.logs.forEach(l => { if (parseInt(l.ratingVal) >= 2000) stats[l.date.split('T')[0]] = 'gold'; });
+        const calStats = {};
+        appData.logs.forEach(l => { calStats[l.date.split('T')[0]] = 'active'; });
+        appData.logs.forEach(l => { if (parseInt(l.ratingVal) >= 2000) calStats[l.date.split('T')[0]] = 'gold'; });
 
         for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
         let streak = 0; const todayStr = now.toISOString().split('T')[0];
         for(let d=1; d<=daysInMonth; d++) {
             const dayStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const cell = document.createElement('div');
-            cell.className = `cal-cell ${stats[dayStr] || ''}`;
+            cell.className = `cal-cell ${calStats[dayStr] || ''}`;
             if (dayStr === todayStr) cell.classList.add('today');
             cell.innerText = d; grid.appendChild(cell);
-            if (new Date(dayStr) <= now && stats[dayStr]) streak++;
-            else if (new Date(dayStr) < now && !stats[dayStr]) streak = 0;
+            if (new Date(dayStr) <= now && calStats[dayStr]) streak++;
+            else if (new Date(dayStr) < now && !calStats[dayStr]) streak = 0;
         }
         document.getElementById('streakDays').innerText = streak;
     }
 
-    // 彩带特效 (无需外部库)
     function fireConfetti() {
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        
         let particles = [];
         const colors = ['#4f46e5', '#db2777', '#f59e0b', '#10b981', '#3b82f6'];
-        
-        for(let i=0; i<100; i++) {
+        for(let i=0; i<150; i++) {
             particles.push({
                 x: window.innerWidth / 2, y: window.innerHeight / 2,
-                vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10 - 5,
+                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15 - 5,
                 color: colors[Math.floor(Math.random()*colors.length)],
-                size: Math.random() * 5 + 2, life: 100
+                size: Math.random() * 6 + 2, life: 120
             });
         }
-        
         function animate() {
             ctx.clearRect(0,0,canvas.width,canvas.height);
             particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life--;
+                p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--;
                 ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
                 if(p.life <= 0) particles.splice(index, 1);
             });
