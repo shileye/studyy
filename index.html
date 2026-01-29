@@ -22,9 +22,9 @@
         body {
             margin: 0; padding: 40px 20px;
             background: var(--bg); color: var(--text-main);
-            font-family: 'Noto Serif SC', serif; /* 主要是衬线体，更有诗意 */
+            font-family: 'Noto Serif SC', serif;
             min-height: 100vh;
-            display: flex; justify-content: center;
+            display: flex; flex-direction: column; align-items: center;
         }
 
         .container {
@@ -39,8 +39,8 @@
         .quote-box {
             grid-area: quote;
             background: var(--card);
-            padding: 50px;
-            border-radius: 16px;
+            padding: 40px;
+            border-radius: 12px;
             box-shadow: var(--shadow);
             text-align: center;
             position: relative;
@@ -48,17 +48,10 @@
             overflow: hidden;
         }
         .quote-content {
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 15px;
-            min-height: 2.4rem;
+            font-size: 1.5rem; font-weight: bold; color: #1e293b;
+            margin-bottom: 10px; min-height: 2.2rem;
         }
-        .quote-author {
-            color: var(--accent);
-            font-style: italic;
-            font-size: 0.95rem;
-        }
+        .quote-author { color: var(--accent); font-style: italic; font-size: 0.9rem; }
         .timer-bar {
             position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary);
             width: 0%; animation: timeFlow 30s linear infinite;
@@ -67,28 +60,26 @@
 
         /* 左侧面板 */
         .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: var(--card); padding: 25px; border-radius: 16px; box-shadow: var(--shadow); }
+        .card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: var(--shadow); }
 
         .user-card { text-align: center; }
         .rank-badge {
             background: #e0e7ff; color: var(--primary);
-            padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
+            padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem;
             font-family: 'JetBrains Mono', monospace;
         }
-        .xp-bar {
-            height: 8px; background: #f1f5f9; border-radius: 4px; margin: 15px 0; overflow: hidden;
-        }
+        .xp-bar { height: 6px; background: #f1f5f9; border-radius: 3px; margin: 15px 0; overflow: hidden; }
         .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-item { background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
-        .stat-val { font-weight: bold; font-size: 1.2rem; color: var(--text-main); display: block; }
+        .stat-item { background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
+        .stat-val { font-weight: bold; font-size: 1.1rem; color: var(--text-main); display: block; }
 
         /* 日历 */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 15px; }
         .cal-cell {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            border-radius: 6px; font-size: 0.8rem; background: #f8fafc; color: #cbd5e1;
+            border-radius: 4px; font-size: 0.75rem; background: #f8fafc; color: #cbd5e1;
             font-family: 'JetBrains Mono', monospace;
         }
         .cal-cell.today { border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
@@ -96,45 +87,65 @@
         .cal-cell.gold { background: var(--gold); color: white; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
 
         /* 主内容区 */
-        .main { grid-area: main; display: flex; flex-direction: column; gap: 25px; }
+        .main { grid-area: main; display: flex; flex-direction: column; gap: 20px; }
 
         /* 必修任务 */
         .todo-section { border: 2px dashed #cbd5e1; }
         .todo-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;
+            padding: 10px 15px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;
         }
         .todo-item.done { text-decoration: line-through; opacity: 0.6; }
 
         /* 提交区 */
-        .input-box {
-            display: grid; gap: 15px;
-        }
+        .input-box { display: grid; gap: 12px; }
         .row { display: flex; gap: 10px; }
         input, select {
-            padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;
             font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; width: 100%;
         }
         input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
         
         .btn {
-            border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer;
-            color: white; background: var(--primary);
+            border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;
+            color: white; background: var(--primary); transition: 0.2s;
         }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-share { background: var(--accent); width: 100%; margin-top: 10px; }
+        .btn-share { background: var(--text-main); width: 100%; margin-top: 10px; font-size: 0.9rem;}
 
         /* 记录列表 */
         .log-list { display: flex; flex-direction: column; gap: 10px; }
         .log-card {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; background: white; border-radius: 10px;
+            padding: 12px 20px; background: white; border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-left: 4px solid #ccc;
         }
         .rating-tag {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-            padding: 3px 8px; border-radius: 4px; margin-right: 8px; color: white;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: white;
+        }
+        
+        /* 链接样式 */
+        .link-group a {
+            text-decoration: none; font-size: 0.85rem; margin-left: 15px;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .link-prob { color: #94a3b8; }
+        .link-prob:hover { color: var(--text-main); text-decoration: underline; }
+        .link-sol { color: var(--primary); font-weight: bold; }
+        .link-sol:hover { text-decoration: underline; }
+
+        /* 底部灵魂拷问 */
+        .footer-msg {
+            margin-top: 50px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            font-family: 'Noto Serif SC', serif;
+            grid-column: 1 / -1; /* 跨越网格 */
         }
 
         /* 响应式 */
@@ -147,7 +158,7 @@
 <body>
 
 <div class="container">
-    <!-- 1. 语录区 (自动刷新) -->
+    <!-- 1. 语录区 -->
     <div class="quote-box">
         <div class="quote-content" id="qContent">...</div>
         <div class="quote-author" id="qAuthor"></div>
@@ -175,7 +186,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-share" onclick="copyReport()">📋 复制今日战报 (发群)</button>
+            <button class="btn btn-share" onclick="copyReport()">📋 复制今日简报</button>
         </div>
 
         <div class="card">
@@ -213,8 +224,8 @@
             </div>
 
             <div class="row">
-                <input type="text" id="probLink" placeholder="题目链接 (选填)">
-                <input type="text" id="solLink" placeholder="题解链接 (选填)">
+                <input type="text" id="probLink" placeholder="原题链接 (选填)">
+                <input type="text" id="solLink" placeholder="我的代码链接 (重要! 生成战报用)">
             </div>
 
             <button class="btn" onclick="submitAC()">✅ 确认 AC (GET XP)</button>
@@ -224,6 +235,11 @@
         <h3 style="margin:0;">🗓️ 时光轨迹</h3>
         <div class="log-list" id="logList"></div>
     </div>
+
+    <!-- 底部拷问 -->
+    <div class="footer-msg">
+        你要考虑这是不是你此生仅有的机会
+    </div>
 </div>
 
 <script>
@@ -232,7 +248,6 @@
     
     // 语录库 (40条)
     const QUOTES = [
-        // 古诗词
         {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
         {t:"欲买桂花同载酒，终不似，少年游。", a:"刘过"},
         {t:"人生若只如初见，何事秋风悲画扇。", a:"纳兰性德"},
@@ -243,7 +258,6 @@
         {t:"醉后不知天在水，满船清梦压星河。", a:"唐温如"},
         {t:"世间无限丹青手，一片伤心画不成。", a:"高蟾"},
         {t:"休对故人思故国，且将新火试新茶。诗酒趁年华。", a:"苏轼"},
-        // 伤感/孤独
         {t:"代码写得再好，也 catch 不到你抛出的异常。", a:"Anon"},
         {t:"我们都在阴沟里，但仍有人仰望星空。", a:"王尔德"},
         {t:"你所谓的岁月静好，不过是有人替你负重前行。", a:"网络"},
@@ -252,12 +266,11 @@
         {t:"孤独是人生的常态，算法是孤独的解药。", a:"Coder"},
         {t:"不仅要 AC 题目，更想 AC 你的人生。", a:"情书"},
         {t:"凌晨三点的 IDE，比任何人都懂你的努力。", a:"致自己"},
-        // 励志/Rating
         {t:"种一棵树最好的时间是十年前，其次是现在。", a:"Dambisa Moyo"},
         {t:"简单的事情重复做，你就是专家。", a:"刻意练习"},
         {t:"不要在夕阳西下时幻想，要在旭日东升时努力。", a:"早安"},
         {t:"你想要的生活，都在你现在的努力里。", a:"加油"},
-        {t:"菜是原罪，练是救赎。", a:"小羊肖恩(大概说过)"},
+        {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
         {t:"Rating 2000 以前，没有天赋，只有手熟。", a:"算法竞赛"},
         {t:"那些杀不死你的 Bug，终将使你更强大。", a:"Nietzsche Patch"},
         {t:"既然选择了远方，便只顾风雨兼程。", a:"汪国真"},
@@ -265,7 +278,6 @@
         {t:"将来的你，一定会感谢现在拼命的自己。", a:"共勉"},
         {t:"乾坤未定，你我皆是黑马。", a:"高考标语"},
         {t:"Talk is cheap. Show me the code.", a:"Linus Torvalds"},
-        // 补充
         {t:"人生如逆旅，我亦是行人。", a:"苏轼"},
         {t:"当时只道是寻常。", a:"纳兰性德"},
         {t:"知我者，谓我心忧；不知我者，谓我何求。", a:"诗经"},
@@ -278,31 +290,20 @@
         {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
     ];
 
-    // Rating 颜色配置
     const RATINGS = {
-        "1200": { color: "#808080", label: "< 1400", xp: 10 },    // 灰
-        "1500": { color: "#03a89e", label: "1400-1600", xp: 25 }, // 青
-        "1750": { color: "#3b82f6", label: "1600-1900", xp: 45 }, // 蓝
-        "2000": { color: "#a855f7", label: "1900-2100", xp: 70 }, // 紫
-        "2200": { color: "#ef4444", label: "2100+", xp: 100 }     // 红
+        "1200": { color: "#808080", label: "< 1400", xp: 10 },
+        "1500": { color: "#03a89e", label: "1400-1600", xp: 25 },
+        "1750": { color: "#3b82f6", label: "1600-1900", xp: 45 },
+        "2000": { color: "#a855f7", label: "1900-2100", xp: 70 },
+        "2200": { color: "#ef4444", label: "2100+", xp: 100 }
     };
 
-    let appData = {
-        xp: 0,
-        level: 1,
-        maxRating: 0,
-        todos: [],
-        logs: []
-    };
-
+    let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [] };
     let quoteIdx = 0;
 
-    /* --- 初始化 --- */
     window.onload = () => {
         loadData();
         renderUI();
-        
-        // 启动语录轮播 (30s)
         updateQuote();
         setInterval(() => {
             quoteIdx = (quoteIdx + 1) % QUOTES.length;
@@ -314,49 +315,33 @@
         const q = QUOTES[quoteIdx];
         const elC = document.getElementById('qContent');
         const elA = document.getElementById('qAuthor');
-        
-        // 淡出动画
         elC.style.opacity = 0; elA.style.opacity = 0;
-        
         setTimeout(() => {
-            elC.innerText = q.t;
-            elA.innerText = `—— ${q.a}`;
+            elC.innerText = q.t; elA.innerText = `—— ${q.a}`;
             elC.style.opacity = 1; elA.style.opacity = 1;
         }, 300);
     }
 
-    /* --- 核心逻辑 --- */
     function loadData() {
         const saved = localStorage.getItem(DB_KEY);
         if (saved) appData = JSON.parse(saved);
-        // 确保日期是今天
-        const today = new Date().toISOString().split('T')[0];
     }
-
     function saveData() {
         localStorage.setItem(DB_KEY, JSON.stringify(appData));
         renderUI();
     }
 
-    // 1. 添加必修任务
     function addTodo() {
         const val = document.getElementById('todoInput').value;
         if (!val) return;
         appData.todos.push({
-            id: Date.now(),
-            text: val,
-            date: new Date().toISOString().split('T')[0],
-            done: false
+            id: Date.now(), text: val, date: new Date().toISOString().split('T')[0], done: false
         });
         document.getElementById('todoInput').value = '';
         saveData();
     }
 
-    // 2. 提交 AC
-    let pendingTodoId = null;
-
     function setPendingTodo(id, text) {
-        pendingTodoId = id;
         document.getElementById('probName').value = text;
         document.getElementById('submitZone').scrollIntoView({ behavior: 'smooth' });
         document.getElementById('probName').focus();
@@ -364,83 +349,68 @@
 
     function submitAC() {
         const name = document.getElementById('probName').value;
-        if (!name) return alert("题目名字都不写？");
+        if (!name) return alert("题目名称必填");
 
         const rVal = document.getElementById('ratingSelect').value;
         const config = RATINGS[rVal];
-        
-        // 更新最大Rating
-        const rNum = parseInt(rVal); // 简单用value代表分数段基准
+        const sol = document.getElementById('solLink').value;
+        const link = document.getElementById('probLink').value;
+
+        // 更新MaxRating
         if (rVal === "2200") appData.maxRating = Math.max(appData.maxRating, 2200);
         else if (rVal === "2000") appData.maxRating = Math.max(appData.maxRating, 2000);
-        // ...简化处理，主要看 XP
 
-        // 联动必修任务
-        if (pendingTodoId) {
-            const task = appData.todos.find(t => t.id === pendingTodoId);
-            if (task) task.done = true;
-            pendingTodoId = null;
-        } else {
-            // 尝试按名字匹配
-            const match = appData.todos.find(t => t.text === name && !t.done);
-            if (match) match.done = true;
-        }
+        // 更新Todo状态
+        const match = appData.todos.find(t => t.text === name && !t.done);
+        if (match) match.done = true;
 
-        // 记录日志
         appData.logs.unshift({
-            id: Date.now(),
-            date: new Date().toISOString(),
-            name: name,
-            ratingVal: rVal,
-            link: document.getElementById('probLink').value,
-            sol: document.getElementById('solLink').value,
-            xp: config.xp
+            id: Date.now(), date: new Date().toISOString(),
+            name, ratingVal: rVal, link, sol, xp: config.xp
         });
-
         appData.xp += config.xp;
-        
-        // 升级判定 (XP曲线: 50 * level^2)
+
+        // 升级判定
         const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
         if (nextLv > appData.level) {
             appData.level = nextLv;
-            alert(`🎉 恭喜升级！当前等级 LV.${appData.level}`);
+            alert(`🎉 升级了！LV.${appData.level}`);
         }
 
-        // 清空
         document.getElementById('probName').value = '';
         document.getElementById('probLink').value = '';
         document.getElementById('solLink').value = '';
-        
         saveData();
     }
 
-    // 3. 复制战报 (替代公开链接方案)
+    // 极简战报生成
     function copyReport() {
         const today = new Date().toISOString().split('T')[0];
         const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
-        const totalXP = todayLogs.reduce((sum, l) => sum + l.xp, 0);
         
+        if(todayLogs.length === 0) return alert("今天还没做题呢，先AC一道吧！");
+
+        // 极简格式：总数 + 列表(题目:链接)
+        const listText = todayLogs.map(l => {
+            const linkText = l.sol ? l.sol : '暂无代码链接';
+            return `✅ ${l.name}\n🔗 ${linkText}`;
+        }).join('\n\n');
+
         const text = `
-📅 算法修炼日报 [${today}]
-👤 ID: Algo_Warrior (Lv.${appData.level})
-🏆 今日Rating: ${appData.maxRating > 0 ? appData.maxRating : '暂无'}
-⚔️ 今日刷题: ${todayLogs.length} 道
-✨ 获得经验: ${totalXP} XP
+📅 ${today} 算法打卡
+🏆 AC总数: ${todayLogs.length}
 --------------------
-${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')}
+${listText}
 --------------------
 "${document.getElementById('qContent').innerText}"
-(Powered by Code & Sorrow)
         `.trim();
 
         navigator.clipboard.writeText(text).then(() => {
-            alert("战报已复制！快去群里粘贴装逼！");
+            alert("极简战报已复制！包含代码链接，去群里发吧！");
         });
     }
 
-    /* --- 渲染逻辑 --- */
     function renderUI() {
-        // 用户面板
         document.getElementById('lvNum').innerText = appData.level;
         document.getElementById('curXP').innerText = appData.xp;
         const nextXP = 50 * Math.pow(appData.level, 2);
@@ -450,37 +420,28 @@ ${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')
         document.getElementById('xpFill').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
 
         document.getElementById('totalAC').innerText = appData.logs.length;
-        // 简易计算最大Rating显示 (根据日志里的最高记录)
+        
+        // 显示Max Rating
         let maxR = 0;
-        appData.logs.forEach(l => {
-            if(l.ratingVal === '2200') maxR = Math.max(maxR, 2100);
-            else if(l.ratingVal === '2000') maxR = Math.max(maxR, 1900);
-            else if(l.ratingVal === '1750') maxR = Math.max(maxR, 1600);
-            else if(l.ratingVal === '1500') maxR = Math.max(maxR, 1400);
-            else maxR = Math.max(maxR, 1200);
-        });
-        document.getElementById('maxRating').innerText = maxR > 0 ? maxR + '+' : 'Unrated';
+        if(appData.maxRating >= 2200) maxR = "2100+";
+        else if(appData.maxRating >= 2000) maxR = "1900+";
+        else maxR = "Unrated";
+        document.getElementById('maxRating').innerText = maxR;
 
-        // 必修列表
+        // Todo List
         const todoBox = document.getElementById('todoList');
         todoBox.innerHTML = '';
-        // 仅显示未完成 或者 今天完成的
         const today = new Date().toISOString().split('T')[0];
         const showTodos = appData.todos.filter(t => !t.done || t.date === today);
-        
-        if (showTodos.length === 0) todoBox.innerHTML = '<div style="color:#999;font-size:0.9rem">今日无任务，快去添加！</div>';
-
+        if (showTodos.length === 0) todoBox.innerHTML = '<div style="color:#999;font-size:0.8rem">今日任务已清空</div>';
         showTodos.forEach(t => {
             const div = document.createElement('div');
             div.className = `todo-item ${t.done ? 'done' : ''}`;
-            div.innerHTML = `
-                <span>${t.text}</span>
-                ${!t.done ? `<button class="btn btn-outline" style="padding:4px 10px;font-size:0.8rem" onclick="setPendingTodo(${t.id}, '${t.text}')">去完成</button>` : '<span>✔️</span>'}
-            `;
+            div.innerHTML = `<span>${t.text}</span>${!t.done ? `<button class="btn btn-outline" style="padding:4px 8px;font-size:0.75rem" onclick="setPendingTodo(${t.id}, '${t.text}')">提交</button>` : '<span>✔️</span>'}`;
             todoBox.appendChild(div);
         });
 
-        // 日志列表
+        // Log List
         const logBox = document.getElementById('logList');
         logBox.innerHTML = '';
         appData.logs.slice(0, 30).forEach(l => {
@@ -490,16 +451,15 @@ ${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')
             div.style.borderLeftColor = conf.color;
             div.innerHTML = `
                 <div>
-                    <div style="font-weight:bold;">
+                    <div style="font-weight:bold; display:flex; align-items:center;">
                         <span class="rating-tag" style="background:${conf.color}">${conf.label}</span>
                         ${l.name}
                     </div>
-                    <div style="font-size:0.8rem; color:#888; margin-top:5px;">
-                        ${l.date.split('T')[0]} · +${l.xp} XP
-                    </div>
+                    <div style="font-size:0.8rem; color:#888; margin-top:5px;">${l.date.split('T')[0]} · +${l.xp} XP</div>
                 </div>
-                <div>
-                    ${l.link ? `<a href="${l.link}" target="_blank" style="color:var(--primary)">题目</a>` : ''}
+                <div class="link-group">
+                    ${l.link ? `<a href="${l.link}" target="_blank" class="link-prob">原题</a>` : ''}
+                    ${l.sol ? `<a href="${l.sol}" target="_blank" class="link-sol">我的代码</a>` : '<span style="font-size:0.8rem;color:#ccc;margin-left:10px;">无代码</span>'}
                 </div>
             `;
             logBox.appendChild(div);
@@ -518,23 +478,10 @@ ${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')
         const firstDay = new Date(y, m, 1).getDay();
         const daysInMonth = new Date(y, m+1, 0).getDate();
         
-        // 统计数据
         const stats = {};
-        appData.logs.forEach(l => {
-            const d = l.date.split('T')[0];
-            stats[d] = 'active';
-        });
-
-        // 检查金色 (当天必修全部完成)
-        // 简单逻辑：如果当天有Todo且全部done，则gold。这里简化为只要做了难题(Rating>1900)就给金
-        appData.logs.forEach(l => {
-            if (parseInt(l.ratingVal) >= 2000) {
-                const d = l.date.split('T')[0];
-                stats[d] = 'gold';
-            }
-        });
+        appData.logs.forEach(l => { stats[l.date.split('T')[0]] = 'active'; });
+        appData.logs.forEach(l => { if (parseInt(l.ratingVal) >= 2000) stats[l.date.split('T')[0]] = 'gold'; });
         
-        // 渲染
         for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
         
         let streak = 0;
@@ -547,8 +494,7 @@ ${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')
             if (dayStr === todayStr) cell.classList.add('today');
             cell.innerText = d;
             grid.appendChild(cell);
-
-            // 简单计算连胜：检查直到昨天的连续记录
+            
             if (new Date(dayStr) <= now && stats[dayStr]) streak++;
             else if (new Date(dayStr) < now && !stats[dayStr]) streak = 0;
         }
