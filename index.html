@@ -3,331 +3,410 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>时光 · 题解 (计划版)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Code & Sorrow // 算法日记</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --primary: #6366f1; 
-            --primary-light: #e0e7ff;
-            --gold: #f59e0b; /* 完成必修任务的金色 */
-            --gold-light: #fef3c7;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --accent: #f43f5e;
-            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
-            --border-radius: 16px;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #4f46e5; /* 靛蓝 */
+            --accent: #db2777; /* 玫红 */
+            --text-main: #334155;
+            --text-light: #64748b;
+            --shadow: 0 4px 20px -5px rgba(0,0,0,0.1);
+            --gold: #f59e0b;
         }
 
         * { box-sizing: border-box; outline: none; transition: all 0.3s ease; }
 
         body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Noto Sans SC', sans-serif;
+            margin: 0; padding: 40px 20px;
+            background: var(--bg); color: var(--text-main);
+            font-family: 'Noto Serif SC', serif; /* 主要是衬线体，更有诗意 */
             min-height: 100vh;
             display: flex; justify-content: center;
-            padding-top: 30px; padding-bottom: 40px;
         }
 
         .container {
-            width: 92%; max-width: 1100px;
+            width: 100%; max-width: 1200px;
             display: grid;
             grid-template-columns: 320px 1fr;
-            gap: 25px;
+            gap: 30px;
             grid-template-areas: "quote quote" "sidebar main";
         }
 
         /* 顶部语录 */
-        .quote-section {
+        .quote-box {
             grid-area: quote;
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: var(--border-radius);
+            background: var(--card);
+            padding: 50px;
+            border-radius: 16px;
             box-shadow: var(--shadow);
             text-align: center;
-            border-bottom: 3px solid var(--primary);
+            position: relative;
+            border-left: 5px solid var(--primary);
+            overflow: hidden;
         }
-        .quote-text {
-            font-family: 'Noto Serif SC', serif;
-            font-size: 1.5rem; font-weight: 700; color: #374151;
-            margin-bottom: 10px;
+        .quote-content {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            min-height: 2.4rem;
         }
-        .quote-author { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+        .quote-author {
+            color: var(--accent);
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+        .timer-bar {
+            position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary);
+            width: 0%; animation: timeFlow 30s linear infinite;
+        }
+        @keyframes timeFlow { from {width: 0%} to {width: 100%} }
 
-        /* 左侧边栏 */
+        /* 左侧面板 */
         .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow); }
+        .card { background: var(--card); padding: 25px; border-radius: 16px; box-shadow: var(--shadow); }
 
-        /* 个人状态 */
-        .user-status { text-align: center; }
-        .level-badge {
-            background: var(--primary-light); color: var(--primary);
-            padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+        .user-card { text-align: center; }
+        .rank-badge {
+            background: #e0e7ff; color: var(--primary);
+            padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
         }
-        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; margin-top: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--primary); width: 0%; }
+        .xp-bar {
+            height: 8px; background: #f1f5f9; border-radius: 4px; margin: 15px 0; overflow: hidden;
+        }
+        .xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .stat-item { background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
+        .stat-val { font-weight: bold; font-size: 1.2rem; color: var(--text-main); display: block; }
 
         /* 日历 */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-        .cal-day-name { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-bottom: 5px; }
-        .cal-day {
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; }
+        .cal-cell {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            font-size: 0.85rem; border-radius: 6px; background: #f9fafb; color: #d1d5db;
+            border-radius: 6px; font-size: 0.8rem; background: #f8fafc; color: #cbd5e1;
+            font-family: 'JetBrains Mono', monospace;
         }
-        .cal-day.today { border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
-        
-        /* 日历状态颜色 */
-        .cal-day.done { background: var(--primary); color: white; } /* 普通打卡 */
-        .cal-day.perfect { background: var(--gold); color: white; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); } /* 必修全清 */
+        .cal-cell.today { border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
+        .cal-cell.active { background: var(--primary); color: white; }
+        .cal-cell.gold { background: var(--gold); color: white; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
 
-        /* 主区域 */
-        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 20px; }
+        /* 主内容区 */
+        .main { grid-area: main; display: flex; flex-direction: column; gap: 25px; }
 
-        /* --- 核心新功能：任务布告栏 --- */
-        .todo-board {
-            border: 2px dashed #e5e7eb;
-        }
-        .todo-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
-        }
-        .todo-input-row {
-            display: flex; gap: 10px; margin-bottom: 15px;
-        }
-        .todo-list { display: flex; flex-direction: column; gap: 10px; }
-        
+        /* 必修任务 */
+        .todo-section { border: 2px dashed #cbd5e1; }
         .todo-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px; background: #f9fafb; border-radius: 10px;
-            border-left: 4px solid var(--text-muted);
+            padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;
         }
-        .todo-item.active { border-left-color: var(--gold); background: var(--gold-light); }
-        .todo-item.done { opacity: 0.6; text-decoration: line-through; border-left-color: #10b981; }
+        .todo-item.done { text-decoration: line-through; opacity: 0.6; }
 
-        .btn-mini {
-            padding: 6px 12px; border-radius: 6px; border: none; font-size: 0.8rem; cursor: pointer;
+        /* 提交区 */
+        .input-box {
+            display: grid; gap: 15px;
         }
-        .btn-action { background: var(--primary); color: white; }
-        .btn-add { background: var(--text-main); color: white; font-weight: bold; }
-
-        /* 提交区域 */
-        .input-group h3 { margin: 0 0 15px 0; font-size: 1.1rem; display: flex; align-items: center; }
-        .input-group.highlight { border: 2px solid var(--primary); animation: pulse 1s; }
-        @keyframes pulse { 0% {box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);} 70% {box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);} 100% {box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);} }
-
-        .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; }
         input, select {
-            flex: 1; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;
+            padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; width: 100%;
         }
-        .btn-submit {
-            width: 100%; padding: 14px; background: var(--primary); color: white; border: none;
-            border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 5px;
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        .btn {
+            border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer;
+            color: white; background: var(--primary);
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-share { background: var(--accent); width: 100%; margin-top: 10px; }
+
+        /* 记录列表 */
+        .log-list { display: flex; flex-direction: column; gap: 10px; }
+        .log-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; background: white; border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-left: 4px solid #ccc;
+        }
+        .rating-tag {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            padding: 3px 8px; border-radius: 4px; margin-right: 8px; color: white;
         }
 
-        /* 历史记录 */
-        .log-item {
-            display: flex; justify-content: space-between; padding: 15px; 
-            background: white; border-radius: 10px; margin-bottom: 10px;
-            border-left: 4px solid #eee;
-        }
-        .log-item.source-task { border-left-color: var(--gold); } /* 必修任务来源 */
-        .tag { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: #eee; margin-right: 5px; }
-        .tag.task { background: var(--gold-light); color: #92400e; }
-
-        @media (max-width: 768px) {
+        /* 响应式 */
+        @media (max-width: 800px) {
             .container { grid-template-columns: 1fr; grid-template-areas: "quote" "sidebar" "main"; }
-            .form-row { flex-direction: column; }
+            .row { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 顶部语录 -->
-    <div class="quote-section">
-        <div class="quote-text" id="quoteText">Loading...</div>
-        <div class="quote-author" id="quoteAuthor"></div>
+    <!-- 1. 语录区 (自动刷新) -->
+    <div class="quote-box">
+        <div class="quote-content" id="qContent">...</div>
+        <div class="quote-author" id="qAuthor"></div>
+        <div class="timer-bar"></div>
     </div>
 
-    <!-- 左侧 -->
+    <!-- 2. 左侧状态 -->
     <div class="sidebar">
-        <div class="card user-status">
-            <div class="level-badge" id="rankTitle">入门新手</div>
-            <h2 style="margin: 5px 0;">LV.<span id="levelNum">1</span></h2>
-            <div class="progress-bar"><div class="progress-fill" id="xpBar"></div></div>
-            <div style="margin-top:10px; font-size:0.85rem; color:#666;">
-                本月完美打卡(全清): <span style="color:var(--gold); font-weight:bold;" id="perfectDays">0</span> 天
+        <div class="card user-card">
+            <h2 style="margin:5px 0" id="username">Algo_Warrior</h2>
+            <div class="rank-badge" id="lvTitle">Unrated</div>
+            
+            <div style="display:flex; justify-content:space-between; margin-top:15px; font-size:0.8rem;">
+                <span>LV.<span id="lvNum">1</span></span>
+                <span><span id="curXP">0</span> / <span id="nextXP">100</span> XP</span>
             </div>
+            <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+
+            <div class="stat-grid">
+                <div class="stat-item"><span class="stat-val" id="totalAC">0</span>累计AC</div>
+                <div class="stat-item"><span class="stat-val" id="maxRating">0</span>最高Rating</div>
+                <div class="stat-item" style="grid-column: span 2;">
+                    <span class="stat-val" id="streakDays" style="color:var(--accent)">0</span>
+                    连续打卡天数
+                </div>
+            </div>
+
+            <button class="btn btn-share" onclick="copyReport()">📋 复制今日战报 (发群)</button>
         </div>
 
         <div class="card">
-            <div style="font-weight:bold; margin-bottom:10px;" id="calMonthYear"></div>
-            <div class="calendar-grid" id="calendarGrid"></div>
+            <div style="font-weight:bold; margin-bottom:10px;" id="calTitle"></div>
+            <div class="calendar-grid" id="calGrid"></div>
         </div>
     </div>
 
-    <!-- 主区域 -->
-    <div class="main-content">
+    <!-- 3. 主操作区 -->
+    <div class="main">
         
-        <!-- 模块1：任务布告栏 (新功能) -->
-        <div class="card todo-board">
-            <div class="todo-header">
-                <h3 style="margin:0;">📜 每日必修任务 (ToDo)</h3>
-                <span style="font-size:0.8rem; color:var(--text-muted);">完成必修，点亮金色日历</span>
+        <!-- 必修任务 -->
+        <div class="card todo-section">
+            <h3 style="margin:0 0 15px 0; color:var(--primary);">📜 每日必修 (Daily Quest)</h3>
+            <div class="row">
+                <input type="text" id="todoInput" placeholder="输入今天的必做题 (e.g. 羊题 LC 1024)">
+                <button class="btn" style="width:auto;" onclick="addTodo()">添加</button>
             </div>
+            <div style="margin-top:15px;" id="todoList"></div>
+        </div>
+
+        <!-- 提交 AC -->
+        <div class="card input-box" id="submitZone">
+            <h3 style="margin:0;">⚔️ 提交代码 (Commit)</h3>
             
-            <div class="todo-input-row">
-                <input type="text" id="newTodoInput" placeholder="输入明天/今天的必修题 (如: LeetCode 206)">
-                <button class="btn-mini btn-add" onclick="addTodo()">添加计划</button>
+            <div class="row">
+                <select id="ratingSelect" style="flex:1;">
+                    <option value="1200">Rating < 1400 (新手/简单)</option>
+                    <option value="1500">1400 ~ 1600 (普及/中等)</option>
+                    <option value="1750">1600 ~ 1900 (提高/困难)</option>
+                    <option value="2000">1900 ~ 2100 (大师/竞赛)</option>
+                    <option value="2200">Rating 2100+ (传奇/地狱)</option>
+                </select>
+                <input type="text" id="probName" placeholder="题目名称" style="flex:2;">
             </div>
 
-            <div class="todo-list" id="todoList">
-                <!-- JS生成列表 -->
+            <div class="row">
+                <input type="text" id="probLink" placeholder="题目链接 (选填)">
+                <input type="text" id="solLink" placeholder="题解链接 (选填)">
             </div>
+
+            <button class="btn" onclick="submitAC()">✅ 确认 AC (GET XP)</button>
         </div>
 
-        <!-- 模块2：提交区域 -->
-        <div class="card input-group" id="submitArea">
-            <h3>✨ 提交代码 & 结算</h3>
-            <div class="form-row">
-                <select id="taskType">
-                    <option value="random">🎲 自由刷题</option>
-                    <option value="task">🏆 必修任务结算</option>
-                </select>
-                <input type="text" id="probName" placeholder="题目名称" style="flex:2">
-            </div>
-            <div class="form-row">
-                <input type="text" id="probLink" placeholder="题目链接">
-                <input type="text" id="solLink" placeholder="题解链接 (记录你的思路)">
-            </div>
-            <div class="form-row">
-                <select id="difficulty">
-                    <option value="easy">简单</option>
-                    <option value="med">中等</option>
-                    <option value="hard">困难</option>
-                </select>
-                <button class="btn-submit" onclick="submitProblem()">确认已 AC</button>
-            </div>
-        </div>
-
-        <!-- 模块3：最近记录 -->
+        <!-- 历史记录 -->
+        <h3 style="margin:0;">🗓️ 时光轨迹</h3>
         <div class="log-list" id="logList"></div>
     </div>
 </div>
 
 <script>
-    const DB_KEY = "algo_planner_v3";
-    const RANKS = ["入门新手", "初级码农", "算法学徒", "逻辑诗人", "代码行者", "图灵信徒", "赛博神明"];
+    /* --- 配置区 --- */
+    const DB_KEY = "algo_v4_rating";
+    
+    // 语录库 (40条)
     const QUOTES = [
-        { t: "未雨绸缪，是程序员的浪漫。", a: "架构师格言" },
-        { t: "种一棵树最好的时间是十年前，其次是现在。", a: "Dambisa Moyo" },
-        { t: "不要等待心情好才开始，开始做了心情才会好。", a: "行动力法则" },
-        { t: "日拱一卒，功不唐捐。", a: "曾国藩" },
-        { t: "你写下的每一行代码，都是通往未来的阶梯。", a: "致自己" },
-        { t: "简单的事情重复做，你就是专家。", a: "刻意练习" }
+        // 古诗词
+        {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
+        {t:"欲买桂花同载酒，终不似，少年游。", a:"刘过"},
+        {t:"人生若只如初见，何事秋风悲画扇。", a:"纳兰性德"},
+        {t:"曾经沧海难为水，除却巫山不是云。", a:"元稹"},
+        {t:"此情可待成追忆，只是当时已惘然。", a:"李商隐"},
+        {t:"桃李春风一杯酒，江湖夜雨十年灯。", a:"黄庭坚"},
+        {t:"满目山河空念远，落花风雨更伤春。", a:"晏殊"},
+        {t:"醉后不知天在水，满船清梦压星河。", a:"唐温如"},
+        {t:"世间无限丹青手，一片伤心画不成。", a:"高蟾"},
+        {t:"休对故人思故国，且将新火试新茶。诗酒趁年华。", a:"苏轼"},
+        // 伤感/孤独
+        {t:"代码写得再好，也 catch 不到你抛出的异常。", a:"Anon"},
+        {t:"我们都在阴沟里，但仍有人仰望星空。", a:"王尔德"},
+        {t:"你所谓的岁月静好，不过是有人替你负重前行。", a:"网络"},
+        {t:"后来，我们什么都有了，却没有了我们。", a:"后来的我们"},
+        {t:"听闻爱情，十人九悲。", a:"网抑云"},
+        {t:"孤独是人生的常态，算法是孤独的解药。", a:"Coder"},
+        {t:"不仅要 AC 题目，更想 AC 你的人生。", a:"情书"},
+        {t:"凌晨三点的 IDE，比任何人都懂你的努力。", a:"致自己"},
+        // 励志/Rating
+        {t:"种一棵树最好的时间是十年前，其次是现在。", a:"Dambisa Moyo"},
+        {t:"简单的事情重复做，你就是专家。", a:"刻意练习"},
+        {t:"不要在夕阳西下时幻想，要在旭日东升时努力。", a:"早安"},
+        {t:"你想要的生活，都在你现在的努力里。", a:"加油"},
+        {t:"菜是原罪，练是救赎。", a:"小羊肖恩(大概说过)"},
+        {t:"Rating 2000 以前，没有天赋，只有手熟。", a:"算法竞赛"},
+        {t:"那些杀不死你的 Bug，终将使你更强大。", a:"Nietzsche Patch"},
+        {t:"既然选择了远方，便只顾风雨兼程。", a:"汪国真"},
+        {t:"星光不问赶路人，时光不负有心人。", a:"佚名"},
+        {t:"将来的你，一定会感谢现在拼命的自己。", a:"共勉"},
+        {t:"乾坤未定，你我皆是黑马。", a:"高考标语"},
+        {t:"Talk is cheap. Show me the code.", a:"Linus Torvalds"},
+        // 补充
+        {t:"人生如逆旅，我亦是行人。", a:"苏轼"},
+        {t:"当时只道是寻常。", a:"纳兰性德"},
+        {t:"知我者，谓我心忧；不知我者，谓我何求。", a:"诗经"},
+        {t:"每一个不曾起舞的日子，都是对生命的辜负。", a:"尼采"},
+        {t:"愿你出走半生，归来仍是少年。", a:"孙衍"},
+        {t:"未雨绸缪，是程序员的顶级浪漫。", a:"架构"},
+        {t:"真正的大师，永远怀着一颗学徒的心。", a:"易大师"},
+        {t:"你只管努力，上天自有安排。", a:"随缘"},
+        {t:"Debug 的过程，就是自己承认自己傻逼的过程。", a:"真理"},
+        {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
     ];
+
+    // Rating 颜色配置
+    const RATINGS = {
+        "1200": { color: "#808080", label: "< 1400", xp: 10 },    // 灰
+        "1500": { color: "#03a89e", label: "1400-1600", xp: 25 }, // 青
+        "1750": { color: "#3b82f6", label: "1600-1900", xp: 45 }, // 蓝
+        "2000": { color: "#a855f7", label: "1900-2100", xp: 70 }, // 紫
+        "2200": { color: "#ef4444", label: "2100+", xp: 100 }     // 红
+    };
 
     let appData = {
         xp: 0,
         level: 1,
-        todos: [], // { id, text, dateStr, status: 'pending'|'done' }
+        maxRating: 0,
+        todos: [],
         logs: []
     };
 
-    // --- 初始化 ---
-    window.onload = function() {
+    let quoteIdx = 0;
+
+    /* --- 初始化 --- */
+    window.onload = () => {
+        loadData();
+        renderUI();
+        
+        // 启动语录轮播 (30s)
+        updateQuote();
+        setInterval(() => {
+            quoteIdx = (quoteIdx + 1) % QUOTES.length;
+            updateQuote();
+        }, 30000);
+    };
+
+    function updateQuote() {
+        const q = QUOTES[quoteIdx];
+        const elC = document.getElementById('qContent');
+        const elA = document.getElementById('qAuthor');
+        
+        // 淡出动画
+        elC.style.opacity = 0; elA.style.opacity = 0;
+        
+        setTimeout(() => {
+            elC.innerText = q.t;
+            elA.innerText = `—— ${q.a}`;
+            elC.style.opacity = 1; elA.style.opacity = 1;
+        }, 300);
+    }
+
+    /* --- 核心逻辑 --- */
+    function loadData() {
         const saved = localStorage.getItem(DB_KEY);
         if (saved) appData = JSON.parse(saved);
-        
-        // 每日随机语录
-        const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-        document.getElementById('quoteText').innerText = q.t;
-        document.getElementById('quoteAuthor').innerText = `—— ${q.a}`;
-
-        renderUI();
-    };
+        // 确保日期是今天
+        const today = new Date().toISOString().split('T')[0];
+    }
 
     function saveData() {
         localStorage.setItem(DB_KEY, JSON.stringify(appData));
         renderUI();
     }
 
-    // --- 任务计划功能 ---
+    // 1. 添加必修任务
     function addTodo() {
-        const input = document.getElementById('newTodoInput');
-        if(!input.value.trim()) return;
-
+        const val = document.getElementById('todoInput').value;
+        if (!val) return;
         appData.todos.push({
             id: Date.now(),
-            text: input.value,
-            dateStr: new Date().toISOString().split('T')[0], // 记录创建日期
-            status: 'pending'
+            text: val,
+            date: new Date().toISOString().split('T')[0],
+            done: false
         });
-        input.value = '';
+        document.getElementById('todoInput').value = '';
         saveData();
     }
 
-    // 准备提交任务
-    let pendingTaskId = null; // 暂存当前正在提交的任务ID
+    // 2. 提交 AC
+    let pendingTodoId = null;
 
-    function prepareSubmit(todoId, todoText) {
-        pendingTaskId = todoId;
-        
-        // 视觉引导：滚动到提交框，闪烁，自动填入
-        const area = document.getElementById('submitArea');
-        area.scrollIntoView({ behavior: 'smooth' });
-        area.classList.add('highlight');
-        setTimeout(() => area.classList.remove('highlight'), 1000);
-
-        // 自动填表
-        document.getElementById('probName').value = todoText;
-        document.getElementById('taskType').value = 'task'; // 锁定为任务结算
+    function setPendingTodo(id, text) {
+        pendingTodoId = id;
+        document.getElementById('probName').value = text;
+        document.getElementById('submitZone').scrollIntoView({ behavior: 'smooth' });
         document.getElementById('probName').focus();
     }
 
-    // --- 提交功能 ---
-    function submitProblem() {
+    function submitAC() {
         const name = document.getElementById('probName').value;
-        if(!name) return alert("写个名字吧，方便以后复习。");
+        if (!name) return alert("题目名字都不写？");
 
-        const type = document.getElementById('taskType').value;
-        const diff = document.getElementById('difficulty').value;
+        const rVal = document.getElementById('ratingSelect').value;
+        const config = RATINGS[rVal];
         
-        // 如果是从“必修任务”提交的，更新任务状态
-        if(type === 'task' && pendingTaskId) {
-            const task = appData.todos.find(t => t.id === pendingTaskId);
-            if(task) task.status = 'done';
-            pendingTaskId = null; // 重置
-        } else if (type === 'task' && !pendingTaskId) {
-            // 如果用户手动选了“必修任务”但没关联ID，我们尝试按名字匹配一个最近的未完成任务
-            const match = appData.todos.find(t => t.text === name && t.status === 'pending');
-            if(match) match.status = 'done';
+        // 更新最大Rating
+        const rNum = parseInt(rVal); // 简单用value代表分数段基准
+        if (rVal === "2200") appData.maxRating = Math.max(appData.maxRating, 2200);
+        else if (rVal === "2000") appData.maxRating = Math.max(appData.maxRating, 2000);
+        // ...简化处理，主要看 XP
+
+        // 联动必修任务
+        if (pendingTodoId) {
+            const task = appData.todos.find(t => t.id === pendingTodoId);
+            if (task) task.done = true;
+            pendingTodoId = null;
+        } else {
+            // 尝试按名字匹配
+            const match = appData.todos.find(t => t.text === name && !t.done);
+            if (match) match.done = true;
         }
 
-        // 计算XP
-        let xp = diff === 'easy' ? 10 : (diff === 'med' ? 20 : 50);
-        if(type === 'task') xp += 20; // 必修任务额外奖励
-
+        // 记录日志
         appData.logs.unshift({
             id: Date.now(),
             date: new Date().toISOString(),
-            type, name, diff,
+            name: name,
+            ratingVal: rVal,
             link: document.getElementById('probLink').value,
             sol: document.getElementById('solLink').value,
-            xp
+            xp: config.xp
         });
-        appData.xp += xp;
 
-        // 升级判断
+        appData.xp += config.xp;
+        
+        // 升级判定 (XP曲线: 50 * level^2)
         const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
-        if(nextLv > appData.level) {
+        if (nextLv > appData.level) {
             appData.level = nextLv;
-            alert(`升级！当前等级: ${RANKS[Math.min(appData.level-1, RANKS.length-1)]}`);
+            alert(`🎉 恭喜升级！当前等级 LV.${appData.level}`);
         }
 
-        // 清空表单
+        // 清空
         document.getElementById('probName').value = '';
         document.getElementById('probLink').value = '';
         document.getElementById('solLink').value = '';
@@ -335,149 +414,145 @@
         saveData();
     }
 
-    // --- 渲染逻辑 ---
-    function renderUI() {
-        // 1. 渲染状态
-        const rIdx = Math.min(appData.level-1, RANKS.length-1);
-        document.getElementById('rankTitle').innerText = RANKS[rIdx];
-        document.getElementById('levelNum').innerText = appData.level;
+    // 3. 复制战报 (替代公开链接方案)
+    function copyReport() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
+        const totalXP = todayLogs.reduce((sum, l) => sum + l.xp, 0);
         
-        const base = 50 * Math.pow(appData.level-1, 2);
-        const next = 50 * Math.pow(appData.level, 2);
-        const pct = ((appData.xp - base) / (next - base)) * 100;
-        document.getElementById('xpBar').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
+        const text = `
+📅 算法修炼日报 [${today}]
+👤 ID: Algo_Warrior (Lv.${appData.level})
+🏆 今日Rating: ${appData.maxRating > 0 ? appData.maxRating : '暂无'}
+⚔️ 今日刷题: ${todayLogs.length} 道
+✨ 获得经验: ${totalXP} XP
+--------------------
+${todayLogs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n')}
+--------------------
+"${document.getElementById('qContent').innerText}"
+(Powered by Code & Sorrow)
+        `.trim();
 
-        // 2. 渲染任务列表 (ToDo)
-        const todoContainer = document.getElementById('todoList');
-        todoContainer.innerHTML = '';
-        
-        // 过滤：显示所有未完成的，和今天已完成的
-        const todayStr = new Date().toISOString().split('T')[0];
-        const visibleTodos = appData.todos.filter(t => t.status === 'pending' || t.dateStr === todayStr);
-
-        if(visibleTodos.length === 0) {
-            todoContainer.innerHTML = '<div style="color:#999; text-align:center; padding:10px;">暂无任务，快去添加明天的计划吧！</div>';
-        }
-
-        visibleTodos.forEach(t => {
-            const div = document.createElement('div');
-            div.className = `todo-item ${t.status === 'done' ? 'done' : 'active'}`;
-            
-            let btnHtml = '';
-            if(t.status === 'pending') {
-                btnHtml = `<button class="btn-mini btn-action" onclick="prepareSubmit(${t.id}, '${t.text}')">去完成</button>`;
-            } else {
-                btnHtml = `<span style="color:#10b981; font-weight:bold;">已完成 √</span>`;
-            }
-
-            div.innerHTML = `
-                <div>
-                    <div style="font-weight:500;">${t.text}</div>
-                    <div style="font-size:0.75rem; color:#888;">${t.status==='pending'?'待办':'完成于'} · ${t.dateStr}</div>
-                </div>
-                ${btnHtml}
-            `;
-            todoContainer.appendChild(div);
-        });
-
-        // 3. 渲染日历
-        renderCalendar();
-
-        // 4. 渲染历史日志
-        const logContainer = document.getElementById('logList');
-        logContainer.innerHTML = '';
-        appData.logs.slice(0, 30).forEach(log => {
-            const date = new Date(log.date);
-            const timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
-            const div = document.createElement('div');
-            div.className = `log-item ${log.type === 'task' ? 'source-task' : ''}`;
-            
-            const tag = log.type === 'task' 
-                ? `<span class="tag task">🏆 必修</span>` 
-                : `<span class="tag">🎲 练习</span>`;
-
-            div.innerHTML = `
-                <div>
-                    <div>${tag} <b>${log.name}</b></div>
-                    <div style="font-size:0.8rem; color:#888; margin-top:4px;">${timeStr} · +${log.xp}XP</div>
-                </div>
-                <div style="font-size:0.9rem;">
-                    ${log.link ? `<a href="${log.link}" target="_blank" style="color:var(--primary)">题目</a>` : ''}
-                    ${log.sol ? `<a href="${log.sol}" target="_blank" style="color:var(--primary); margin-left:5px;">题解</a>` : ''}
-                </div>
-            `;
-            logContainer.appendChild(div);
+        navigator.clipboard.writeText(text).then(() => {
+            alert("战报已复制！快去群里粘贴装逼！");
         });
     }
 
-    function renderCalendar() {
-        const grid = document.getElementById('calendarGrid');
-        grid.innerHTML = '';
-        
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const firstDay = new Date(year, month, 1).getDay();
+    /* --- 渲染逻辑 --- */
+    function renderUI() {
+        // 用户面板
+        document.getElementById('lvNum').innerText = appData.level;
+        document.getElementById('curXP').innerText = appData.xp;
+        const nextXP = 50 * Math.pow(appData.level, 2);
+        document.getElementById('nextXP').innerText = nextXP;
+        const prevXP = 50 * Math.pow(appData.level - 1, 2);
+        const pct = ((appData.xp - prevXP) / (nextXP - prevXP)) * 100;
+        document.getElementById('xpFill').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
 
-        document.getElementById('calMonthYear').innerText = `${year} 年 ${month+1} 月`;
-
-        // 统计每一天的完成情况
-        const stats = {}; // "2023-10-01": { hasLog: bool, allTasksDone: bool }
-        
-        // 1. 找出所有有提交记录的日子
+        document.getElementById('totalAC').innerText = appData.logs.length;
+        // 简易计算最大Rating显示 (根据日志里的最高记录)
+        let maxR = 0;
         appData.logs.forEach(l => {
-            const d = l.date.split('T')[0];
-            if(!stats[d]) stats[d] = { hasLog: true, pendingTasks: false };
+            if(l.ratingVal === '2200') maxR = Math.max(maxR, 2100);
+            else if(l.ratingVal === '2000') maxR = Math.max(maxR, 1900);
+            else if(l.ratingVal === '1750') maxR = Math.max(maxR, 1600);
+            else if(l.ratingVal === '1500') maxR = Math.max(maxR, 1400);
+            else maxR = Math.max(maxR, 1200);
+        });
+        document.getElementById('maxRating').innerText = maxR > 0 ? maxR + '+' : 'Unrated';
+
+        // 必修列表
+        const todoBox = document.getElementById('todoList');
+        todoBox.innerHTML = '';
+        // 仅显示未完成 或者 今天完成的
+        const today = new Date().toISOString().split('T')[0];
+        const showTodos = appData.todos.filter(t => !t.done || t.date === today);
+        
+        if (showTodos.length === 0) todoBox.innerHTML = '<div style="color:#999;font-size:0.9rem">今日无任务，快去添加！</div>';
+
+        showTodos.forEach(t => {
+            const div = document.createElement('div');
+            div.className = `todo-item ${t.done ? 'done' : ''}`;
+            div.innerHTML = `
+                <span>${t.text}</span>
+                ${!t.done ? `<button class="btn btn-outline" style="padding:4px 10px;font-size:0.8rem" onclick="setPendingTodo(${t.id}, '${t.text}')">去完成</button>` : '<span>✔️</span>'}
+            `;
+            todoBox.appendChild(div);
         });
 
-        // 2. 检查每一天的任务完成情况
-        // 这里的逻辑稍微简化：如果当天没有任何 status='pending' 的任务创建于当天或之前，算“清空”
-        // 但为了简单有效：我们只看“当天创建的任务是否都变成了done”
-        // 实际逻辑：获取当天所有创建的任务。如果数量>0 且 全部 done，则为 perfect。
-        let perfectCount = 0;
+        // 日志列表
+        const logBox = document.getElementById('logList');
+        logBox.innerHTML = '';
+        appData.logs.slice(0, 30).forEach(l => {
+            const conf = RATINGS[l.ratingVal];
+            const div = document.createElement('div');
+            div.className = 'log-card';
+            div.style.borderLeftColor = conf.color;
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:bold;">
+                        <span class="rating-tag" style="background:${conf.color}">${conf.label}</span>
+                        ${l.name}
+                    </div>
+                    <div style="font-size:0.8rem; color:#888; margin-top:5px;">
+                        ${l.date.split('T')[0]} · +${l.xp} XP
+                    </div>
+                </div>
+                <div>
+                    ${l.link ? `<a href="${l.link}" target="_blank" style="color:var(--primary)">题目</a>` : ''}
+                </div>
+            `;
+            logBox.appendChild(div);
+        });
+
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = '';
+        const now = new Date();
+        const y = now.getFullYear(); const m = now.getMonth();
+        document.getElementById('calTitle').innerText = `${y}年 ${m+1}月`;
+        
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m+1, 0).getDate();
+        
+        // 统计数据
+        const stats = {};
+        appData.logs.forEach(l => {
+            const d = l.date.split('T')[0];
+            stats[d] = 'active';
+        });
+
+        // 检查金色 (当天必修全部完成)
+        // 简单逻辑：如果当天有Todo且全部done，则gold。这里简化为只要做了难题(Rating>1900)就给金
+        appData.logs.forEach(l => {
+            if (parseInt(l.ratingVal) >= 2000) {
+                const d = l.date.split('T')[0];
+                stats[d] = 'gold';
+            }
+        });
+        
+        // 渲染
+        for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+        
+        let streak = 0;
+        const todayStr = now.toISOString().split('T')[0];
 
         for(let d=1; d<=daysInMonth; d++) {
-            const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            
-            // 当天创建的任务
-            const dayTasks = appData.todos.filter(t => t.dateStr === dayStr);
-            const dayLogs = appData.logs.some(l => l.date.split('T')[0] === dayStr);
-
-            let statusClass = '';
-            
-            if (dayLogs) {
-                statusClass = 'done'; // 只要做了题，就是蓝色
-            }
-
-            // 判定金色：如果有任务，且任务全完成
-            if (dayTasks.length > 0) {
-                const allDone = dayTasks.every(t => t.status === 'done');
-                if (allDone) {
-                    statusClass = 'perfect'; // 金色
-                    if(new Date(dayStr) <= now) perfectCount++;
-                } else {
-                    // 有任务没做完，即使做了题也不能是金色，只能是蓝色
-                }
-            } else {
-                // 如果当天没布置任务，但刷了题，算不算金色？
-                // 按照“必须定制”的逻辑，没布置任务不算完成必修。保持蓝色。
-            }
-
-            // 绘制格子
+            const dayStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const cell = document.createElement('div');
-            cell.className = `cal-day ${statusClass}`;
-            if(dayStr === now.toISOString().split('T')[0]) cell.classList.add('today');
+            cell.className = `cal-cell ${stats[dayStr] || ''}`;
+            if (dayStr === todayStr) cell.classList.add('today');
             cell.innerText = d;
-            
-            // 补齐前面的空白
-            if(d===1) {
-                cell.style.gridColumnStart = firstDay + 1;
-            }
             grid.appendChild(cell);
+
+            // 简单计算连胜：检查直到昨天的连续记录
+            if (new Date(dayStr) <= now && stats[dayStr]) streak++;
+            else if (new Date(dayStr) < now && !stats[dayStr]) streak = 0;
         }
-        
-        document.getElementById('perfectDays').innerText = perfectCount;
+        document.getElementById('streakDays').innerText = streak;
     }
 </script>
 </body>
