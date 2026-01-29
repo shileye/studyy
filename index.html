@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时光 · 题解 (计划版)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --primary: #6366f1; 
+            --primary-light: #e0e7ff;
+            --gold: #f59e0b; /* 完成必修任务的金色 */
+            --gold-light: #fef3c7;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --accent: #f43f5e;
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --border-radius: 16px;
+        }
+
+        * { box-sizing: border-box; outline: none; transition: all 0.3s ease; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            min-height: 100vh;
+            display: flex; justify-content: center;
+            padding-top: 30px; padding-bottom: 40px;
+        }
+
+        .container {
+            width: 92%; max-width: 1100px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 25px;
+            grid-template-areas: "quote quote" "sidebar main";
+        }
+
+        /* 顶部语录 */
+        .quote-section {
+            grid-area: quote;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+        }
+        .quote-text {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem; font-weight: 700; color: #374151;
+            margin-bottom: 10px;
+        }
+        .quote-author { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+
+        /* 左侧边栏 */
+        .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow); }
+
+        /* 个人状态 */
+        .user-status { text-align: center; }
+        .level-badge {
+            background: var(--primary-light); color: var(--primary);
+            padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+        }
+        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; }
+
+        /* 日历 */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+        .cal-day-name { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-bottom: 5px; }
+        .cal-day {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; border-radius: 6px; background: #f9fafb; color: #d1d5db;
+        }
+        .cal-day.today { border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
+        
+        /* 日历状态颜色 */
+        .cal-day.done { background: var(--primary); color: white; } /* 普通打卡 */
+        .cal-day.perfect { background: var(--gold); color: white; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); } /* 必修全清 */
+
+        /* 主区域 */
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 20px; }
+
+        /* --- 核心新功能：任务布告栏 --- */
+        .todo-board {
+            border: 2px dashed #e5e7eb;
+        }
+        .todo-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+        .todo-input-row {
+            display: flex; gap: 10px; margin-bottom: 15px;
+        }
+        .todo-list { display: flex; flex-direction: column; gap: 10px; }
+        
+        .todo-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; background: #f9fafb; border-radius: 10px;
+            border-left: 4px solid var(--text-muted);
+        }
+        .todo-item.active { border-left-color: var(--gold); background: var(--gold-light); }
+        .todo-item.done { opacity: 0.6; text-decoration: line-through; border-left-color: #10b981; }
+
+        .btn-mini {
+            padding: 6px 12px; border-radius: 6px; border: none; font-size: 0.8rem; cursor: pointer;
+        }
+        .btn-action { background: var(--primary); color: white; }
+        .btn-add { background: var(--text-main); color: white; font-weight: bold; }
+
+        /* 提交区域 */
+        .input-group h3 { margin: 0 0 15px 0; font-size: 1.1rem; display: flex; align-items: center; }
+        .input-group.highlight { border: 2px solid var(--primary); animation: pulse 1s; }
+        @keyframes pulse { 0% {box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);} 70% {box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);} 100% {box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);} }
+
+        .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        input, select {
+            flex: 1; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;
+        }
+        .btn-submit {
+            width: 100%; padding: 14px; background: var(--primary); color: white; border: none;
+            border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 5px;
+        }
+
+        /* 历史记录 */
+        .log-item {
+            display: flex; justify-content: space-between; padding: 15px; 
+            background: white; border-radius: 10px; margin-bottom: 10px;
+            border-left: 4px solid #eee;
+        }
+        .log-item.source-task { border-left-color: var(--gold); } /* 必修任务来源 */
+        .tag { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: #eee; margin-right: 5px; }
+        .tag.task { background: var(--gold-light); color: #92400e; }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; grid-template-areas: "quote" "sidebar" "main"; }
+            .form-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 顶部语录 -->
+    <div class="quote-section">
+        <div class="quote-text" id="quoteText">Loading...</div>
+        <div class="quote-author" id="quoteAuthor"></div>
+    </div>
+
+    <!-- 左侧 -->
+    <div class="sidebar">
+        <div class="card user-status">
+            <div class="level-badge" id="rankTitle">入门新手</div>
+            <h2 style="margin: 5px 0;">LV.<span id="levelNum">1</span></h2>
+            <div class="progress-bar"><div class="progress-fill" id="xpBar"></div></div>
+            <div style="margin-top:10px; font-size:0.85rem; color:#666;">
+                本月完美打卡(全清): <span style="color:var(--gold); font-weight:bold;" id="perfectDays">0</span> 天
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="font-weight:bold; margin-bottom:10px;" id="calMonthYear"></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+
+    <!-- 主区域 -->
+    <div class="main-content">
+        
+        <!-- 模块1：任务布告栏 (新功能) -->
+        <div class="card todo-board">
+            <div class="todo-header">
+                <h3 style="margin:0;">📜 每日必修任务 (ToDo)</h3>
+                <span style="font-size:0.8rem; color:var(--text-muted);">完成必修，点亮金色日历</span>
+            </div>
+            
+            <div class="todo-input-row">
+                <input type="text" id="newTodoInput" placeholder="输入明天/今天的必修题 (如: LeetCode 206)">
+                <button class="btn-mini btn-add" onclick="addTodo()">添加计划</button>
+            </div>
+
+            <div class="todo-list" id="todoList">
+                <!-- JS生成列表 -->
+            </div>
+        </div>
+
+        <!-- 模块2：提交区域 -->
+        <div class="card input-group" id="submitArea">
+            <h3>✨ 提交代码 & 结算</h3>
+            <div class="form-row">
+                <select id="taskType">
+                    <option value="random">🎲 自由刷题</option>
+                    <option value="task">🏆 必修任务结算</option>
+                </select>
+                <input type="text" id="probName" placeholder="题目名称" style="flex:2">
+            </div>
+            <div class="form-row">
+                <input type="text" id="probLink" placeholder="题目链接">
+                <input type="text" id="solLink" placeholder="题解链接 (记录你的思路)">
+            </div>
+            <div class="form-row">
+                <select id="difficulty">
+                    <option value="easy">简单</option>
+                    <option value="med">中等</option>
+                    <option value="hard">困难</option>
+                </select>
+                <button class="btn-submit" onclick="submitProblem()">确认已 AC</button>
+            </div>
+        </div>
+
+        <!-- 模块3：最近记录 -->
+        <div class="log-list" id="logList"></div>
+    </div>
+</div>
+
+<script>
+    const DB_KEY = "algo_planner_v3";
+    const RANKS = ["入门新手", "初级码农", "算法学徒", "逻辑诗人", "代码行者", "图灵信徒", "赛博神明"];
+    const QUOTES = [
+        { t: "未雨绸缪，是程序员的浪漫。", a: "架构师格言" },
+        { t: "种一棵树最好的时间是十年前，其次是现在。", a: "Dambisa Moyo" },
+        { t: "不要等待心情好才开始，开始做了心情才会好。", a: "行动力法则" },
+        { t: "日拱一卒，功不唐捐。", a: "曾国藩" },
+        { t: "你写下的每一行代码，都是通往未来的阶梯。", a: "致自己" },
+        { t: "简单的事情重复做，你就是专家。", a: "刻意练习" }
+    ];
+
+    let appData = {
+        xp: 0,
+        level: 1,
+        todos: [], // { id, text, dateStr, status: 'pending'|'done' }
+        logs: []
+    };
+
+    // --- 初始化 ---
+    window.onload = function() {
+        const saved = localStorage.getItem(DB_KEY);
+        if (saved) appData = JSON.parse(saved);
+        
+        // 每日随机语录
+        const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+        document.getElementById('quoteText').innerText = q.t;
+        document.getElementById('quoteAuthor').innerText = `—— ${q.a}`;
+
+        renderUI();
+    };
+
+    function saveData() {
+        localStorage.setItem(DB_KEY, JSON.stringify(appData));
+        renderUI();
+    }
+
+    // --- 任务计划功能 ---
+    function addTodo() {
+        const input = document.getElementById('newTodoInput');
+        if(!input.value.trim()) return;
+
+        appData.todos.push({
+            id: Date.now(),
+            text: input.value,
+            dateStr: new Date().toISOString().split('T')[0], // 记录创建日期
+            status: 'pending'
+        });
+        input.value = '';
+        saveData();
+    }
+
+    // 准备提交任务
+    let pendingTaskId = null; // 暂存当前正在提交的任务ID
+
+    function prepareSubmit(todoId, todoText) {
+        pendingTaskId = todoId;
+        
+        // 视觉引导：滚动到提交框，闪烁，自动填入
+        const area = document.getElementById('submitArea');
+        area.scrollIntoView({ behavior: 'smooth' });
+        area.classList.add('highlight');
+        setTimeout(() => area.classList.remove('highlight'), 1000);
+
+        // 自动填表
+        document.getElementById('probName').value = todoText;
+        document.getElementById('taskType').value = 'task'; // 锁定为任务结算
+        document.getElementById('probName').focus();
+    }
+
+    // --- 提交功能 ---
+    function submitProblem() {
+        const name = document.getElementById('probName').value;
+        if(!name) return alert("写个名字吧，方便以后复习。");
+
+        const type = document.getElementById('taskType').value;
+        const diff = document.getElementById('difficulty').value;
+        
+        // 如果是从“必修任务”提交的，更新任务状态
+        if(type === 'task' && pendingTaskId) {
+            const task = appData.todos.find(t => t.id === pendingTaskId);
+            if(task) task.status = 'done';
+            pendingTaskId = null; // 重置
+        } else if (type === 'task' && !pendingTaskId) {
+            // 如果用户手动选了“必修任务”但没关联ID，我们尝试按名字匹配一个最近的未完成任务
+            const match = appData.todos.find(t => t.text === name && t.status === 'pending');
+            if(match) match.status = 'done';
+        }
+
+        // 计算XP
+        let xp = diff === 'easy' ? 10 : (diff === 'med' ? 20 : 50);
+        if(type === 'task') xp += 20; // 必修任务额外奖励
+
+        appData.logs.unshift({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            type, name, diff,
+            link: document.getElementById('probLink').value,
+            sol: document.getElementById('solLink').value,
+            xp
+        });
+        appData.xp += xp;
+
+        // 升级判断
+        const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
+        if(nextLv > appData.level) {
+            appData.level = nextLv;
+            alert(`升级！当前等级: ${RANKS[Math.min(appData.level-1, RANKS.length-1)]}`);
+        }
+
+        // 清空表单
+        document.getElementById('probName').value = '';
+        document.getElementById('probLink').value = '';
+        document.getElementById('solLink').value = '';
+        
+        saveData();
+    }
+
+    // --- 渲染逻辑 ---
+    function renderUI() {
+        // 1. 渲染状态
+        const rIdx = Math.min(appData.level-1, RANKS.length-1);
+        document.getElementById('rankTitle').innerText = RANKS[rIdx];
+        document.getElementById('levelNum').innerText = appData.level;
+        
+        const base = 50 * Math.pow(appData.level-1, 2);
+        const next = 50 * Math.pow(appData.level, 2);
+        const pct = ((appData.xp - base) / (next - base)) * 100;
+        document.getElementById('xpBar').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
+
+        // 2. 渲染任务列表 (ToDo)
+        const todoContainer = document.getElementById('todoList');
+        todoContainer.innerHTML = '';
+        
+        // 过滤：显示所有未完成的，和今天已完成的
+        const todayStr = new Date().toISOString().split('T')[0];
+        const visibleTodos = appData.todos.filter(t => t.status === 'pending' || t.dateStr === todayStr);
+
+        if(visibleTodos.length === 0) {
+            todoContainer.innerHTML = '<div style="color:#999; text-align:center; padding:10px;">暂无任务，快去添加明天的计划吧！</div>';
+        }
+
+        visibleTodos.forEach(t => {
+            const div = document.createElement('div');
+            div.className = `todo-item ${t.status === 'done' ? 'done' : 'active'}`;
+            
+            let btnHtml = '';
+            if(t.status === 'pending') {
+                btnHtml = `<button class="btn-mini btn-action" onclick="prepareSubmit(${t.id}, '${t.text}')">去完成</button>`;
+            } else {
+                btnHtml = `<span style="color:#10b981; font-weight:bold;">已完成 √</span>`;
+            }
+
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:500;">${t.text}</div>
+                    <div style="font-size:0.75rem; color:#888;">${t.status==='pending'?'待办':'完成于'} · ${t.dateStr}</div>
+                </div>
+                ${btnHtml}
+            `;
+            todoContainer.appendChild(div);
+        });
+
+        // 3. 渲染日历
+        renderCalendar();
+
+        // 4. 渲染历史日志
+        const logContainer = document.getElementById('logList');
+        logContainer.innerHTML = '';
+        appData.logs.slice(0, 30).forEach(log => {
+            const date = new Date(log.date);
+            const timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+            const div = document.createElement('div');
+            div.className = `log-item ${log.type === 'task' ? 'source-task' : ''}`;
+            
+            const tag = log.type === 'task' 
+                ? `<span class="tag task">🏆 必修</span>` 
+                : `<span class="tag">🎲 练习</span>`;
+
+            div.innerHTML = `
+                <div>
+                    <div>${tag} <b>${log.name}</b></div>
+                    <div style="font-size:0.8rem; color:#888; margin-top:4px;">${timeStr} · +${log.xp}XP</div>
+                </div>
+                <div style="font-size:0.9rem;">
+                    ${log.link ? `<a href="${log.link}" target="_blank" style="color:var(--primary)">题目</a>` : ''}
+                    ${log.sol ? `<a href="${log.sol}" target="_blank" style="color:var(--primary); margin-left:5px;">题解</a>` : ''}
+                </div>
+            `;
+            logContainer.appendChild(div);
+        });
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDay = new Date(year, month, 1).getDay();
+
+        document.getElementById('calMonthYear').innerText = `${year} 年 ${month+1} 月`;
+
+        // 统计每一天的完成情况
+        const stats = {}; // "2023-10-01": { hasLog: bool, allTasksDone: bool }
+        
+        // 1. 找出所有有提交记录的日子
+        appData.logs.forEach(l => {
+            const d = l.date.split('T')[0];
+            if(!stats[d]) stats[d] = { hasLog: true, pendingTasks: false };
+        });
+
+        // 2. 检查每一天的任务完成情况
+        // 这里的逻辑稍微简化：如果当天没有任何 status='pending' 的任务创建于当天或之前，算“清空”
+        // 但为了简单有效：我们只看“当天创建的任务是否都变成了done”
+        // 实际逻辑：获取当天所有创建的任务。如果数量>0 且 全部 done，则为 perfect。
+        let perfectCount = 0;
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            
+            // 当天创建的任务
+            const dayTasks = appData.todos.filter(t => t.dateStr === dayStr);
+            const dayLogs = appData.logs.some(l => l.date.split('T')[0] === dayStr);
+
+            let statusClass = '';
+            
+            if (dayLogs) {
+                statusClass = 'done'; // 只要做了题，就是蓝色
+            }
+
+            // 判定金色：如果有任务，且任务全完成
+            if (dayTasks.length > 0) {
+                const allDone = dayTasks.every(t => t.status === 'done');
+                if (allDone) {
+                    statusClass = 'perfect'; // 金色
+                    if(new Date(dayStr) <= now) perfectCount++;
+                } else {
+                    // 有任务没做完，即使做了题也不能是金色，只能是蓝色
+                }
+            } else {
+                // 如果当天没布置任务，但刷了题，算不算金色？
+                // 按照“必须定制”的逻辑，没布置任务不算完成必修。保持蓝色。
+            }
+
+            // 绘制格子
+            const cell = document.createElement('div');
+            cell.className = `cal-day ${statusClass}`;
+            if(dayStr === now.toISOString().split('T')[0]) cell.classList.add('today');
+            cell.innerText = d;
+            
+            // 补齐前面的空白
+            if(d===1) {
+                cell.style.gridColumnStart = firstDay + 1;
+            }
+            grid.appendChild(cell);
+        }
+        
+        document.getElementById('perfectDays').innerText = perfectCount;
+    }
+</script>
+</body>
+</html>
