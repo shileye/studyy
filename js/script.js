@@ -1,6 +1,12 @@
-const DB_KEY = "algo_v7_cow"; // 保持 Key 不变，尝试找回数据
+// 全局错误捕获，防止代码炸了你不知道
+window.onerror = function(msg, url, line) {
+    alert("系统报错: " + msg + "\n请截图发给开发者。");
+    return false;
+};
 
-// ★★★ 23点结算逻辑 ★★★
+const DB_KEY = "algo_v7_cow";
+
+// 23点结算逻辑
 function getLogicalDate() {
     const now = new Date();
     // 如果当前时间 >= 23点，算作"明天"
@@ -38,7 +44,6 @@ const BADGES = [
     { id: "b4", icon: "⚡", title: "肝帝", check: (d) => getTodayCount(d) >= 5 },
     { id: "b5", icon: "⚔️", title: "挑战者", check: (d) => d.maxRating >= 1600 },
     { id: "b6", icon: "👑", title: "大师", check: (d) => d.maxRating >= 1900 },
-    { id: "b7", icon: "👽", title: "传说", check: (d) => d.maxRating >= 2100 },
     { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
 ];
 
@@ -48,21 +53,25 @@ let currentTheme = { p: '#4f46e5', a: '#db2777' };
 let timerInterval = null;
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, lastDate: "" };
 
-// ★★★ 修复：Loading 卡死问题，加 try-catch 保护 ★★★
 window.onload = () => {
     try {
         if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-        const savedColors = localStorage.getItem('themeColors');
-        if(savedColors) {
-            currentTheme = JSON.parse(savedColors);
-            applyTheme(currentTheme.p, currentTheme.a);
-        }
-
-        loadData();
-        loadTimer();
         
-        // 显示逻辑日
-        document.getElementById('logicalDateDisplay').innerText = `当前逻辑日: ${getLogicalDate()}`;
+        // 安全读取颜色配置
+        try {
+            const savedColors = localStorage.getItem('themeColors');
+            if(savedColors) {
+                currentTheme = JSON.parse(savedColors);
+                applyTheme(currentTheme.p, currentTheme.a);
+            }
+        } catch(e) { console.warn("Theme reset"); }
+
+        loadData(); // 加载核心数据
+        loadTimer(); // 加载计时器
+        
+        // 强制确保元素存在，防止报错
+        const dateEl = document.getElementById('logicalDateDisplay');
+        if(dateEl) dateEl.innerText = `当前逻辑日: ${getLogicalDate()}`;
 
         renderUI();
         renderCountdowns();
@@ -77,25 +86,27 @@ window.onload = () => {
         } else {
             updateTimerDisplay(timerState.totalTime);
         }
-    } catch(e) {
-        console.error("Init Error:", e);
-        showToast("初始化出错，请尝试清除缓存", "error");
+    } catch(err) {
+        console.error("Critical Init Error:", err);
+        alert("初始化失败，数据可能损坏。建议清除浏览器缓存或使用 '备份/读档' 功能尝试恢复。");
     }
 };
 
-// --- 数据加载 (修复数据丢失风险) ---
+// --- 数据安全加载 ---
 function loadData() {
     try {
         const saved = localStorage.getItem(DB_KEY);
         if (saved) {
-            appData = JSON.parse(saved);
-            // 兼容性修补：防止旧数据缺少字段导致报错
+            const parsed = JSON.parse(saved);
+            // 混合默认值，防止旧数据缺少字段导致的 undefined 报错
+            appData = { ...appData, ...parsed };
             if(!appData.targets) appData.targets = [];
             if(!appData.todos) appData.todos = [];
             if(!appData.logs) appData.logs = [];
         }
     } catch(e) {
-        console.error("Data Load Error");
+        console.error("Save file corrupted");
+        showToast("存档文件损坏，已重置临时数据", "error");
     }
 }
 function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
@@ -126,6 +137,7 @@ function removeTarget(idx) { appData.targets.splice(idx, 1); saveData(); renderT
 
 function renderCountdowns() {
     const container = document.getElementById('countdownList');
+    if(!container) return;
     container.innerHTML = "";
     const targets = getTargets();
     if (targets.length === 0) { container.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; return; }
@@ -140,7 +152,7 @@ function renderCountdowns() {
     });
 }
 
-// --- 任务管理 (使用逻辑日) ---
+// --- 任务管理 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
@@ -152,15 +164,14 @@ function addTodo() {
     else display += "📖 ";
     display += text;
 
-    // ★★★ 关键：存入的是逻辑日 ★★★
-    const logicalDate = getLogicalDate();
+    const logicalDate = getLogicalDate(); // 使用逻辑日
 
     appData.todos.push({ id: Date.now(), text: display, type: type, date: logicalDate, done: false });
     document.getElementById('todoInput').value = '';
     saveData();
 }
 
-// --- 渲染 (使用逻辑日) ---
+// --- 渲染逻辑 ---
 function renderUI() {
     document.getElementById('lvNum').innerText = appData.level;
     document.getElementById('curXP').innerText = appData.xp;
@@ -200,10 +211,10 @@ function renderUI() {
 
     const sortedKeys = Object.keys(RATINGS).sort((a,b) => RATINGS[b].xp - RATINGS[a].xp);
     
-    // Todos 渲染 (按逻辑日)
+    // Todos 渲染
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
-    const today = getLogicalDate(); // ★★★ 获取逻辑日 ★★★
+    const today = getLogicalDate(); // 使用逻辑日
     
     const showTodos = appData.todos.filter(t => !t.done || t.date === today);
     const completedToday = appData.todos.filter(t => t.date === today && t.done).length;
@@ -256,16 +267,25 @@ function renderUI() {
     });
 }
 
-// --- 基础函数 ---
+// --- 基础工具函数 ---
 function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderUI(); }
 function changeColor(p, a) { currentTheme = { p, a }; applyTheme(p, a); localStorage.setItem('themeColors', JSON.stringify(currentTheme)); renderUI(); showToast("主题已切换", "success"); }
 function applyTheme(p, a) { const root = document.documentElement; root.style.setProperty('--primary', p); root.style.setProperty('--accent', a); }
 function updateQuote() { const q = QUOTES[quoteIdx]; const elC = document.getElementById('qContent'), elA = document.getElementById('qAuthor'); if(!elC) return; elC.style.opacity = 0; elA.style.opacity = 0; setTimeout(() => { elC.innerText = q.t; elA.innerText = `—— ${q.a}`; elC.style.opacity = 1; elA.style.opacity = 1; }, 300); }
-function loadTimer() { const saved = localStorage.getItem('studyTimer'); const todayStr = getLogicalDate(); if (saved) { timerState = JSON.parse(saved); if (timerState.lastDate !== todayStr) { timerState.totalTime = 0; timerState.lastDate = todayStr; timerState.isRunning = false; saveTimer(); } } else { timerState.lastDate = todayStr; } }
+function loadTimer() {
+    try {
+        const saved = localStorage.getItem('studyTimer'); 
+        const todayStr = getLogicalDate(); 
+        if (saved) { 
+            timerState = JSON.parse(saved); 
+            if (timerState.lastDate !== todayStr) { timerState.totalTime = 0; timerState.lastDate = todayStr; timerState.isRunning = false; saveTimer(); } 
+        } else { timerState.lastDate = todayStr; }
+    } catch(e) { console.error("Timer load error"); }
+}
 function saveTimer() { localStorage.setItem('studyTimer', JSON.stringify(timerState)); }
 function toggleTimer() { if (timerState.isRunning) { timerState.totalTime += Date.now() - timerState.startTime; timerState.isRunning = false; clearInterval(timerInterval); saveTimer(); updateTimerUI(false); updateTimerDisplay(timerState.totalTime); showToast("休息一下吧！", "info"); } else { timerState.startTime = Date.now(); timerState.isRunning = true; saveTimer(); startTimerTicker(); updateTimerUI(true); showToast("开始专注！加油！", "success"); } }
 function startTimerTicker() { if(timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { const currentSession = Date.now() - timerState.startTime; updateTimerDisplay(timerState.totalTime + currentSession); }, 1000); }
-function updateTimerDisplay(ms) { const totalSeconds = Math.floor(ms / 1000); const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0'); const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0'); const s = String(totalSeconds % 60).padStart(2, '0'); document.getElementById('totalTimeDisplay').innerText = `${h}:${m}:${s}`; }
+function updateTimerDisplay(ms) { const totalSeconds = Math.floor(ms / 1000); const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0'); const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0'); const s = String(totalSeconds % 60).padStart(2, '0'); const el = document.getElementById('totalTimeDisplay'); if(el) el.innerText = `${h}:${m}:${s}`; }
 function updateTimerUI(isRunning) { const btn = document.getElementById('timerBtn'); const status = document.getElementById('timerStatus'); if (isRunning) { btn.innerText = "⏸️ 暂停 / 结束"; btn.classList.remove('start'); btn.classList.add('stop'); status.innerText = "🔥 专注中"; status.classList.remove('offline'); status.classList.add('online'); } else { btn.innerText = "🚀 开始专注"; btn.classList.remove('stop'); btn.classList.add('start'); status.innerText = "😴 休息中"; status.classList.remove('online'); status.classList.add('offline'); } }
 function exportData() { const dataStr = JSON.stringify(appData); const blob = new Blob([dataStr], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `algo_backup_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("存档已导出", "success"); }
 function importData(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const json = JSON.parse(e.target.result); if(json.logs && json.xp !== undefined) { if(confirm("确定要覆盖当前记录吗？")) { appData = json; saveData(); showToast("读档成功", "success"); } } else { showToast("文件格式错误", "error"); } } catch(err) { showToast("解析失败", "error"); } input.value = ''; }; reader.readAsText(file); }
