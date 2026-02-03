@@ -1,6 +1,6 @@
 const DB_KEY = "algo_v7_cow";
+const ICPC_DATE = "2026-10-01"; // 设置你的 ICPC 比赛日期
 
-// 配置库
 const QUOTES = [
     {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"}, {t:"欲买桂花同载酒，终不似，少年游。", a:"刘过"},
     {t:"人生若只如初见，何事秋风悲画扇。", a:"纳兰性德"}, {t:"代码写得再好，也 catch 不到你抛出的异常。", a:"Anon"},
@@ -31,13 +31,10 @@ const BADGES = [
 
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [] };
 let quoteIdx = 0;
-// 默认主题色
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
 
 window.onload = () => {
-    // 恢复夜间模式
     if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-    // 恢复自定义颜色
     const savedColors = localStorage.getItem('themeColors');
     if(savedColors) {
         currentTheme = JSON.parse(savedColors);
@@ -47,10 +44,11 @@ window.onload = () => {
     loadData();
     renderUI();
     updateQuote();
+    updateCountdown();
     setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000);
+    setInterval(updateCountdown, 60000); // 每分钟更新倒计时
 };
 
-// --- 主题切换逻辑 ---
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
@@ -61,7 +59,7 @@ function changeColor(primary, accent) {
     currentTheme = { p: primary, a: accent };
     applyTheme(primary, accent);
     localStorage.setItem('themeColors', JSON.stringify(currentTheme));
-    renderUI(); // 重绘图表以适配新颜色
+    renderUI();
     showToast("主题色已切换！", "success");
 }
 
@@ -71,7 +69,6 @@ function applyTheme(p, a) {
     root.style.setProperty('--accent', a);
 }
 
-// --- 数据逻辑 ---
 function updateQuote() {
     const q = QUOTES[quoteIdx];
     const elC = document.getElementById('qContent'), elA = document.getElementById('qAuthor');
@@ -80,18 +77,26 @@ function updateQuote() {
     setTimeout(() => { elC.innerText = q.t; elA.innerText = `—— ${q.a}`; elC.style.opacity = 1; elA.style.opacity = 1; }, 300);
 }
 
+// ★★★ 核心新增：倒计时逻辑 ★★★
+function updateCountdown() {
+    const target = new Date(ICPC_DATE);
+    const now = new Date();
+    const diff = target - now;
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const el = document.getElementById('daysLeft');
+    if(el) el.innerText = days > 0 ? days : "FIGHT!";
+}
+
 function loadData() {
     const saved = localStorage.getItem(DB_KEY);
     if (saved) appData = JSON.parse(saved);
 }
 function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
 
-// --- 备份与恢复 (新增) ---
 function exportData() {
     const dataStr = JSON.stringify(appData);
     const blob = new Blob([dataStr], {type: "application/json"});
     const url = URL.createObjectURL(blob);
-    
     const a = document.createElement('a');
     a.href = url;
     a.download = `algo_warrior_backup_${new Date().toISOString().split('T')[0]}.json`;
@@ -104,7 +109,6 @@ function exportData() {
 function importData(input) {
     const file = input.files[0];
     if(!file) return;
-    
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
@@ -121,7 +125,7 @@ function importData(input) {
         } catch(err) {
             showToast("文件解析失败", "error");
         }
-        input.value = ''; // 清空以允许重复上传同一文件
+        input.value = '';
     };
     reader.readAsText(file);
 }
@@ -138,6 +142,15 @@ function addTodo() {
     appData.todos.push({ id: Date.now(), text: val, date: new Date().toISOString().split('T')[0], done: false });
     document.getElementById('todoInput').value = '';
     saveData();
+}
+
+// 切换任务状态（完成/未完成）时更新进度条
+function toggleTodo(id) {
+    const todo = appData.todos.find(t => t.id === id);
+    if(todo) {
+        todo.done = !todo.done;
+        saveData();
+    }
 }
 
 function deleteLog(id) {
@@ -268,9 +281,7 @@ function renderUI() {
         const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
 
-        // 动态使用当前主题色
         const themeColor = currentTheme.p;
-        
         window.myRadarChart = new Chart(ctx, {
             type: 'radar',
             data: {
@@ -278,7 +289,7 @@ function renderUI() {
                 datasets: [{
                     label: 'AC数量',
                     data: levelData,
-                    backgroundColor: themeColor + '33', // 加透明度
+                    backgroundColor: themeColor + '33',
                     borderColor: themeColor,
                     pointBackgroundColor: currentTheme.a,
                     pointBorderColor: '#fff',
@@ -306,17 +317,12 @@ function renderUI() {
     }).join('');
     document.getElementById('ratingStatsBox').innerHTML = statHTML;
 
-    // --- 搜索过滤逻辑 ---
+    // 搜索逻辑
     const searchText = document.getElementById('searchInput')?.value.toLowerCase() || "";
     const logBox = document.getElementById('logList');
     logBox.innerHTML = '';
-    
-    // 过滤 + 限制显示数量
     const filteredLogs = appData.logs.filter(l => l.name.toLowerCase().includes(searchText));
-    
-    if(filteredLogs.length === 0) {
-        logBox.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">空空如也 🍂</div>';
-    }
+    if(filteredLogs.length === 0) logBox.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">空空如也 🍂</div>';
 
     filteredLogs.slice(0, 30).forEach(l => {
         const conf = RATINGS[l.ratingVal];
@@ -339,19 +345,31 @@ function renderUI() {
         logBox.appendChild(div);
     });
     
+    // Todos 渲染 + 进度条更新
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
     const today = new Date().toISOString().split('T')[0];
     const showTodos = appData.todos.filter(t => !t.done || t.date === today);
+    const completedToday = appData.todos.filter(t => t.date === today && t.done).length;
+    const totalToday = appData.todos.filter(t => t.date === today).length;
+    
+    // 更新进度条
+    const pct = totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
+    document.getElementById('dailyProgress').style.width = `${pct}%`;
+    document.getElementById('progressText').innerText = `${pct}%`;
+    // 满分变色
+    if(pct === 100 && totalToday > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
+    else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
+
     if(showTodos.length===0) todoBox.innerHTML='<div style="color:#999;font-size:0.8rem">今日任务已清空</div>';
     showTodos.forEach(t => {
         todoBox.innerHTML += `
         <div class="todo-item ${t.done?'done':''}">
             <div style="display:flex;align-items:center;flex:1;">
                 <span class="btn-del" style="margin-left:0;margin-right:8px;font-size:1rem;" onclick="deleteTodo(${t.id})">✕</span>
-                <span style="font-size:0.9rem">${escapeHtml(t.text)}</span>
+                <span style="font-size:0.9rem; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</span>
             </div>
-            ${!t.done?`<button class="btn btn-ai" style="padding:4px 8px;font-size:0.75rem" onclick="setPendingTodo('${escapeHtml(t.text)}')">提交</button>`:'<span>✔️</span>'}
+            ${!t.done?`<button class="btn btn-ai" style="padding:4px 8px;font-size:0.75rem" onclick="setPendingTodo('${escapeHtml(t.text)}')">提交</button>`:'<span style="cursor:pointer;" onclick="toggleTodo('+t.id+')">✔️</span>'}
         </div>`;
     });
 

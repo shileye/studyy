@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code & Sorrow // 算法日记</title>
+    <title>ICPC 2026 // 决战十月</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -66,6 +66,12 @@
     </div>
 
     <div class="sidebar">
+        <div class="card countdown-card">
+            <div style="font-size:0.85rem; opacity:0.8; margin-bottom:5px;">距离 2026 ICPC 还有</div>
+            <div class="countdown-num" id="daysLeft">---</div>
+            <div style="font-size:0.8rem; opacity:0.6; text-align:right;">Days to go</div>
+        </div>
+
         <div class="card">
             <div class="user-header">
                 <h2 style="margin:5px 0" id="username">Algo_Warrior</h2>
@@ -133,8 +139,16 @@
     <div class="main">
         <div class="card todo-section">
             <h3 style="margin:0; color:var(--primary);">📜 每日必修 (Daily Quest)</h3>
+            
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+                <div class="progress-bg">
+                    <div class="progress-bar" id="dailyProgress" style="width:0%"></div>
+                </div>
+                <div style="font-family:'JetBrains Mono'; font-weight:bold; font-size:0.9rem;" id="progressText">0%</div>
+            </div>
+
             <div class="row" style="margin-top:15px;">
-                <input type="text" id="todoInput" placeholder="输入任务 (e.g. 补题 CF 1900C)">
+                <input type="text" id="todoInput" placeholder="输入明天的任务 (e.g. 补题 x3, 学习 KMP)">
                 <button class="btn-submit" style="width:auto;" onclick="addTodo()">添加</button>
             </div>
             <div class="todo-list" id="todoList"></div>
@@ -167,7 +181,7 @@
         <div class="log-list" id="logList"></div>
     </div>
 
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会</div>
+    <div class="footer-msg">时间紧任务重，你要对得起今天的自己</div>
 </div>
 
 <script src="js/script.js"></script>
