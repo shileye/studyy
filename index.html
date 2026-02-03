@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战十月</title>
+    <title>ICPC 2026 // 决战时刻</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -66,10 +66,21 @@
     </div>
 
     <div class="sidebar">
-        <div class="card countdown-card">
-            <div style="font-size:0.85rem; opacity:0.8; margin-bottom:5px;">距离 2026 ICPC 还有</div>
+        <div class="card countdown-card" onclick="editCountdown()" title="点击修改目标日期">
+            <div style="font-size:0.85rem; opacity:0.9; margin-bottom:5px;" id="targetName">距离 目标日 还有</div>
             <div class="countdown-num" id="daysLeft">---</div>
-            <div style="font-size:0.8rem; opacity:0.6; text-align:right;">Days to go</div>
+            <div style="font-size:0.8rem; opacity:0.8; text-align:right;">Days to go (点击修改)</div>
+        </div>
+
+        <div class="card timer-card">
+            <div class="timer-header">
+                <span>⏱️ 今日专注时长</span>
+                <div id="timerStatus" class="timer-status offline">休息中</div>
+            </div>
+            <div class="timer-display" id="totalTimeDisplay">00:00:00</div>
+            
+            <button id="timerBtn" class="btn btn-timer start" onclick="toggleTimer()">🚀 开始学习 (Clock In)</button>
+            <div style="text-align:center; margin-top:8px; font-size:0.75rem; color:var(--text-light);">不管几点起，学够了就行</div>
         </div>
 
         <div class="card">
@@ -181,7 +192,7 @@
         <div class="log-list" id="logList"></div>
     </div>
 
-    <div class="footer-msg">时间紧任务重，你要对得起今天的自己</div>
+    <div class="footer-msg">别管几点起，今天学够了吗？</div>
 </div>
 
 <script src="js/script.js"></script>

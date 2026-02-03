@@ -1,5 +1,7 @@
 const DB_KEY = "algo_v7_cow";
-const ICPC_DATE = "2026-10-01"; // 设置你的 ICPC 比赛日期
+
+// 默认值，如果没有设置过，就用这个
+const DEFAULT_TARGET = { name: "2026 ICPC", date: "2026-10-01" };
 
 const QUOTES = [
     {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"}, {t:"欲买桂花同载酒，终不似，少年游。", a:"刘过"},
@@ -33,6 +35,10 @@ let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [] };
 let quoteIdx = 0;
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
 
+// 计时器变量
+let timerInterval = null;
+let timerState = { isRunning: false, startTime: 0, totalTime: 0, lastDate: "" };
+
 window.onload = () => {
     if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
     const savedColors = localStorage.getItem('themeColors');
@@ -42,13 +48,147 @@ window.onload = () => {
     }
 
     loadData();
+    loadTimer(); // 加载计时器状态
     renderUI();
     updateQuote();
     updateCountdown();
+    
+    // 定时任务
     setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000);
-    setInterval(updateCountdown, 60000); // 每分钟更新倒计时
+    setInterval(updateCountdown, 60000);
+    
+    // 恢复计时器UI显示
+    if(timerState.isRunning) {
+        startTimerTicker();
+        updateTimerUI(true);
+    } else {
+        updateTimerDisplay(timerState.totalTime);
+    }
 };
 
+// --- 计时器系统 (新增) ---
+function loadTimer() {
+    const saved = localStorage.getItem('studyTimer');
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    if (saved) {
+        timerState = JSON.parse(saved);
+        // 如果跨天了，重置今日时长，但在重置前可以把昨天数据存入历史（这里暂简单重置）
+        if (timerState.lastDate !== todayStr) {
+            timerState.totalTime = 0;
+            timerState.lastDate = todayStr;
+            timerState.isRunning = false; // 跨天强制停止，避免bug
+            saveTimer();
+        }
+    } else {
+        timerState.lastDate = todayStr;
+    }
+}
+
+function saveTimer() {
+    localStorage.setItem('studyTimer', JSON.stringify(timerState));
+}
+
+function toggleTimer() {
+    if (timerState.isRunning) {
+        // 停止计时
+        const now = Date.now();
+        const sessionTime = now - timerState.startTime;
+        timerState.totalTime += sessionTime;
+        timerState.isRunning = false;
+        clearInterval(timerInterval);
+        saveTimer();
+        updateTimerUI(false);
+        updateTimerDisplay(timerState.totalTime);
+        showToast("休息一下吧！已记录时长", "info");
+    } else {
+        // 开始计时
+        timerState.startTime = Date.now();
+        timerState.isRunning = true;
+        saveTimer();
+        startTimerTicker();
+        updateTimerUI(true);
+        showToast("开始专注！加油！", "success");
+    }
+}
+
+function startTimerTicker() {
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const currentSession = Date.now() - timerState.startTime;
+        updateTimerDisplay(timerState.totalTime + currentSession);
+    }, 1000);
+}
+
+function updateTimerDisplay(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(totalSeconds % 60).padStart(2, '0');
+    document.getElementById('totalTimeDisplay').innerText = `${h}:${m}:${s}`;
+}
+
+function updateTimerUI(isRunning) {
+    const btn = document.getElementById('timerBtn');
+    const status = document.getElementById('timerStatus');
+    if (isRunning) {
+        btn.innerText = "⏸️ 暂停 / 结束 (Clock Out)";
+        btn.classList.remove('start');
+        btn.classList.add('stop');
+        status.innerText = "🔥 专注中";
+        status.classList.remove('offline');
+        status.classList.add('online');
+    } else {
+        btn.innerText = "🚀 开始学习 (Clock In)";
+        btn.classList.remove('stop');
+        btn.classList.add('start');
+        status.innerText = "😴 休息中";
+        status.classList.remove('online');
+        status.classList.add('offline');
+    }
+}
+
+// --- 倒计时逻辑 (修改为可配置) ---
+function getTargetConfig() {
+    const saved = localStorage.getItem('targetConfig');
+    return saved ? JSON.parse(saved) : DEFAULT_TARGET;
+}
+
+function editCountdown() {
+    const current = getTargetConfig();
+    const newName = prompt("请输入比赛/目标名称:", current.name);
+    if(newName === null) return;
+    const newDate = prompt("请输入日期 (格式 YYYY-MM-DD):", current.date);
+    if(newDate === null) return;
+    
+    // 简单验证日期格式
+    if(!newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return showToast("日期格式错误，请使用 2026-10-01 格式", "error");
+    }
+
+    localStorage.setItem('targetConfig', JSON.stringify({ name: newName, date: newDate }));
+    updateCountdown();
+    showToast("目标已更新！", "success");
+}
+
+function updateCountdown() {
+    const config = getTargetConfig();
+    document.getElementById('targetName').innerText = `距离 ${config.name} 还有`;
+    
+    const target = new Date(config.date);
+    const now = new Date();
+    const diff = target - now;
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    
+    const el = document.getElementById('daysLeft');
+    if(el) {
+        if(days > 0) el.innerText = days;
+        else if (days === 0) el.innerText = "TODAY!";
+        else el.innerText = "DONE";
+    }
+}
+
+// --- 常规逻辑 ---
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
@@ -75,16 +215,6 @@ function updateQuote() {
     if(!elC) return;
     elC.style.opacity = 0; elA.style.opacity = 0;
     setTimeout(() => { elC.innerText = q.t; elA.innerText = `—— ${q.a}`; elC.style.opacity = 1; elA.style.opacity = 1; }, 300);
-}
-
-// ★★★ 核心新增：倒计时逻辑 ★★★
-function updateCountdown() {
-    const target = new Date(ICPC_DATE);
-    const now = new Date();
-    const diff = target - now;
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    const el = document.getElementById('daysLeft');
-    if(el) el.innerText = days > 0 ? days : "FIGHT!";
 }
 
 function loadData() {
@@ -144,7 +274,6 @@ function addTodo() {
     saveData();
 }
 
-// 切换任务状态（完成/未完成）时更新进度条
 function toggleTodo(id) {
     const todo = appData.todos.find(t => t.id === id);
     if(todo) {
@@ -345,19 +474,18 @@ function renderUI() {
         logBox.appendChild(div);
     });
     
-    // Todos 渲染 + 进度条更新
+    // Todos 渲染 + 进度条
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
     const today = new Date().toISOString().split('T')[0];
     const showTodos = appData.todos.filter(t => !t.done || t.date === today);
+    
     const completedToday = appData.todos.filter(t => t.date === today && t.done).length;
     const totalToday = appData.todos.filter(t => t.date === today).length;
     
-    // 更新进度条
     const pct = totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
     document.getElementById('dailyProgress').style.width = `${pct}%`;
     document.getElementById('progressText').innerText = `${pct}%`;
-    // 满分变色
     if(pct === 100 && totalToday > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
     else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
 
