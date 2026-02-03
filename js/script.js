@@ -62,115 +62,6 @@ function getRealDate() { const now = new Date(); return `${now.getFullYear()}-${
 function getTaskTargetDate() { const now = new Date(); const limit = new Date(); limit.setHours(23, 30, 0, 0); if (now > limit) { const t = new Date(now); t.setDate(t.getDate() + 1); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; } return getRealDate(); }
 function checkDailySettlement() { const today = getRealDate(); const pastTodos = appData.todos.filter(t => t.date < today); if (pastTodos.length > 0) { const groups = {}; pastTodos.forEach(t => { if(!groups[t.date]) groups[t.date] = { total:0, done:0 }; groups[t.date].total++; if(t.done) groups[t.date].done++; }); for(let date in groups) { if (!appData.history.find(h => h.date === date)) { const rec = groups[date]; const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100); appData.history.unshift({ date, ...rec, pct }); } } appData.todos = appData.todos.filter(t => t.date >= today); saveData(); renderUI(); showToast("📅 昨日任务已结算", "info"); } }
 
-// --- 热力图核心 (GitHub Style) ---
-function renderHeatmap() {
-    const grid = document.getElementById('heatmapGrid');
-    if (!grid) return;
-    grid.innerHTML = "";
-    
-    // 生成过去 150 天的数据
-    const today = new Date();
-    const daysToShow = 140; // 约 5 个月，适合填满卡片
-    
-    // 构建热力数据字典
-    const counts = {};
-    appData.logs.forEach(l => {
-        counts[l.date] = (counts[l.date] || 0) + 1;
-    });
-
-    for (let i = daysToShow; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        
-        const count = counts[dateStr] || 0;
-        let level = 'heat-l0';
-        if (count >= 1) level = 'heat-l1';
-        if (count >= 3) level = 'heat-l2';
-        if (count >= 5) level = 'heat-l3';
-        if (count >= 8) level = 'heat-l4';
-
-        const cell = document.createElement('div');
-        cell.className = `heat-cell ${level}`;
-        cell.title = `${dateStr}: ${count} AC`;
-        grid.appendChild(cell);
-    }
-}
-
-// --- 战绩分析 (Stats Pro) ---
-function openStatsModal() {
-    openModal('statsModal');
-    
-    // 1. 概览数据
-    setContent('statTotal', appData.logs.length);
-    setContent('statMaxStreak', getStreak(appData));
-    
-    // 计算单日最高
-    const counts = {};
-    let best = 0;
-    appData.logs.forEach(l => {
-        counts[l.date] = (counts[l.date] || 0) + 1;
-        if(counts[l.date] > best) best = counts[l.date];
-    });
-    setContent('statBestDay', best);
-
-    // 2. 趋势图 (Line Chart)
-    const ctxTrend = document.getElementById('trendChart');
-    if(ctxTrend) {
-        // 获取近 7 天数据
-        const labels = [];
-        const data = [];
-        for(let i=6; i>=0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            labels.push(d.getMonth()+1 + '-' + d.getDate());
-            data.push(counts[dStr] || 0);
-        }
-        
-        if(window.trendChartInst) window.trendChartInst.destroy();
-        window.trendChartInst = new Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'AC 数',
-                    data: data,
-                    borderColor: currentTheme.p,
-                    backgroundColor: currentTheme.p + '33',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: { plugins: { legend: {display:false} }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
-    }
-
-    // 3. 分布图 (Pie Chart)
-    const ctxDist = document.getElementById('distChart');
-    if(ctxDist) {
-        const groups = [0,0,0,0,0]; // 入门, 普及, 提高, 省选, NOI
-        appData.logs.forEach(l => {
-            const conf = RATINGS[l.ratingVal] || RATINGS["1200"];
-            if(conf && conf.group !== undefined) groups[conf.group]++;
-        });
-        
-        if(window.distChartInst) window.distChartInst.destroy();
-        window.distChartInst = new Chart(ctxDist, {
-            type: 'doughnut',
-            data: {
-                labels: ['入门', '普及', '提高', '省选', 'NOI'],
-                datasets: [{
-                    data: groups,
-                    backgroundColor: ['#9ca3af', '#2dd4bf', '#3b82f6', '#a855f7', '#ef4444'],
-                    borderWidth: 0
-                }]
-            },
-            options: { plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } } }
-        });
-    }
-}
-
 function drawFortune() { const res = FORTUNES[Math.floor(Math.random() * FORTUNES.length)]; setContent('fortuneResult', res); fireConfetti(); }
 function toggleCommitArea() { const el = document.getElementById('submitSection'); if (el.style.display === 'none') { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth' }); } else { el.style.display = 'none'; } }
 function addTodo() { const text = document.getElementById('todoInput').value; const type = document.getElementById('todoType').value; if(!text) return showToast("请输入内容", "error"); const targetDate = getTaskTargetDate(); const isTomorrow = targetDate !== getRealDate(); let icon = "📖"; if(type === '赛') icon = "🏆"; if(type === '学') icon = "🧠"; appData.todos.push({ id: Date.now(), text: `${isTomorrow ? "[明日] " : ""}${icon} ${text}`, rawText: text, date: targetDate, done: false, type: type }); document.getElementById('todoInput').value = ''; saveData(); if(isTomorrow) showToast("已加入明日计划", "success"); }
@@ -184,7 +75,8 @@ function renderUI() {
     const prevXP = 50 * Math.pow(appData.level - 1, 2); const pct = ((appData.xp - prevXP) / (nextXP - prevXP)) * 100;
     setStyle('xpFill', 'width', `${Math.max(0, Math.min(pct, 100))}%`); setContent('totalAC', appData.logs.length);
     renderChart(); renderTodos(); renderHistory(); renderLogs(); renderCountdowns();
-    renderHeatmap(); // ★ 使用热力图替代日历
+    renderHeatmap(); 
+    renderCalendar(); // ★ 回归调用：渲染日历
 }
 function renderTodos() { const todayStr = getRealDate(); const list = document.getElementById('todoList'); if(!list) return; list.innerHTML = ""; const activeTodos = appData.todos.filter(t => t.date >= todayStr); const todayOnly = appData.todos.filter(t => t.date === todayStr); const doneCount = todayOnly.filter(t => t.done).length; const progress = todayOnly.length ? Math.round((doneCount/todayOnly.length)*100) : 0; setStyle('dailyProgress', 'width', `${progress}%`); setContent('progressText', `${progress}%`); const bar = document.getElementById('dailyProgress'); if(bar) { if(progress === 100 && todayOnly.length > 0) bar.style.backgroundColor = "#10b981"; else bar.style.backgroundColor = currentTheme.p; } if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日无任务</div>`; activeTodos.sort((a, b) => { if (a.date !== b.date) return a.date.localeCompare(b.date); return a.done - b.done; }); activeTodos.forEach(t => { const goBtn = !t.done ? `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀</button>` : ''; list.innerHTML += `<div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}"> <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div> ${goBtn} <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span> </div>`; }); }
 function renderHistory() { const histList = document.getElementById('historyList'); if(!histList) return; histList.innerHTML = ""; if(appData.history.length === 0) { histList.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无历史</div>`; return; } appData.history.slice(0, 7).forEach(h => { histList.innerHTML += `<div class="history-item"> <span>${h.date}</span> <span>完成度: <b style="color:${h.pct>=80?'#10b981':'#64748b'}">${h.pct}%</b> (${h.done}/${h.total})</span> </div>`; }); }
@@ -212,10 +104,4 @@ function toggleTimer() { if (timerState.isRunning) { timerState.totalTime += Dat
 function startTimerTicker() { if(timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { const currentSession = Date.now() - timerState.startTime; updateTimerDisplay(timerState.totalTime + currentSession); }, 1000); }
 function updateTimerDisplay(ms) { const totalSeconds = Math.floor(ms / 1000); const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0'); const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0'); const s = String(totalSeconds % 60).padStart(2, '0'); const el = document.getElementById('totalTimeDisplay'); if(el) el.innerText = `${h}:${m}:${s}`; }
 function updateTimerUI(isRunning) { const btn = document.getElementById('timerBtn'); const status = document.getElementById('timerStatus'); if (isRunning) { btn.innerText = "⏸️ 暂停"; btn.classList.remove('start'); btn.classList.add('stop'); status.innerText = "🔥 专注中"; status.classList.remove('offline'); status.classList.add('online'); } else { btn.innerText = "🚀 开始专注"; btn.classList.remove('stop'); btn.classList.add('start'); status.innerText = "😴 休息中"; status.classList.remove('online'); status.classList.add('offline'); } }
-function exportData() { const dataStr = JSON.stringify(appData); const blob = new Blob([dataStr], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `algo_backup_${getRealDate()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("存档已导出", "success"); }
-function importData(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const json = JSON.parse(e.target.result); if(confirm("确定覆盖吗？")) { appData = json; saveData(); showToast("读档成功！", "success"); setTimeout(()=>location.reload(), 1000); } } catch(err) { showToast("文件格式错误", "error"); } input.value = ''; }; reader.readAsText(file); }
-function fireConfetti() { const c = document.getElementById('confetti-canvas'); if(!c) return; const ctx = c.getContext('2d'); c.width = window.innerWidth; c.height = window.innerHeight; let p = Array(100).fill(0).map(()=>({x:c.width/2, y:c.height/2, vx:(Math.random()-0.5)*20, vy:(Math.random()-0.5)*20, c:['#4f46e5','#db2777','#f59e0b'][Math.floor(Math.random()*3)], s:Math.random()*6+2, l:100})); function step() { ctx.clearRect(0,0,c.width,c.height); p.forEach((i,k)=>{ i.x+=i.vx; i.y+=i.vy; i.vy+=0.5; i.l--; if(i.y>c.height||i.l<0) p.splice(k,1); ctx.fillStyle=i.c; ctx.fillRect(i.x,i.y,i.s,i.s); }); if(p.length) requestAnimationFrame(step); } step(); }
-function escapeHtml(text) { if (!text) return text; return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
-function getStreak(d) { const today = getRealDate(); let streak = 0; let checkDate = new Date(today); for(let i=0; i<365; i++) { const dateStr = checkDate.toISOString().split('T')[0]; const hasLog = d.logs.some(l => l.date === dateStr); if(hasLog) { streak++; checkDate.setDate(checkDate.getDate() - 1); } else { if(i===0) { checkDate.setDate(checkDate.getDate() - 1); continue; } break; } } return streak; }
-function getTodayCount(d) { const today = getRealDate(); return d.logs.filter(l => l.date === today).length; }
-function showToast(msg, type = 'info') { let container = document.querySelector('.toast-container'); if (!container) { container = document.createElement('div'); container.className = 'toast-container'; document.body.appendChild(container); } const el = document.createElement('div'); el.className = `toast ${type}`; el.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'💡'}</span><span>${msg}</span>`; container.appendChild(el); setTimeout(() => { el.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => el.remove(), 300); }, 3000); }
+function exportData() { const dataStr = JSON.stringify(appData); const blob = new Blob([dataStr], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a
