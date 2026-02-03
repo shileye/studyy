@@ -34,10 +34,7 @@ const QUOTES = [
     {t:"键盘敲烂，月薪过万（大嘘）。", a:"打工人"}, {t:"人生如逆旅，我亦是行人。", a:"苏轼"}
 ];
 
-const FORTUNES = [
-    "大吉 - 宜刷图论", "中吉 - 宜补题", "小吉 - 宜复习模版", "平 - 宜休息", 
-    "大吉 - 今日 AC 率 100%", "吉 - 手感火热", "凶 - 忌写大模拟", "大凶 - 可能会 WA"
-];
+const FORTUNES = ["大吉 - 宜刷图论", "中吉 - 宜补题", "小吉 - 宜复习模版", "平 - 宜休息", "大吉 - 今日 AC 率 100%", "吉 - 手感火热", "凶 - 忌写大模拟", "大凶 - 可能会 WA"];
 
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [] };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
@@ -65,34 +62,119 @@ function getRealDate() { const now = new Date(); return `${now.getFullYear()}-${
 function getTaskTargetDate() { const now = new Date(); const limit = new Date(); limit.setHours(23, 30, 0, 0); if (now > limit) { const t = new Date(now); t.setDate(t.getDate() + 1); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; } return getRealDate(); }
 function checkDailySettlement() { const today = getRealDate(); const pastTodos = appData.todos.filter(t => t.date < today); if (pastTodos.length > 0) { const groups = {}; pastTodos.forEach(t => { if(!groups[t.date]) groups[t.date] = { total:0, done:0 }; groups[t.date].total++; if(t.done) groups[t.date].done++; }); for(let date in groups) { if (!appData.history.find(h => h.date === date)) { const rec = groups[date]; const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100); appData.history.unshift({ date, ...rec, pct }); } } appData.todos = appData.todos.filter(t => t.date >= today); saveData(); renderUI(); showToast("📅 昨日任务已结算", "info"); } }
 
-// --- 新功能：抽卡 ---
-function drawFortune() {
-    const res = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
-    setContent('fortuneResult', res);
-    fireConfetti();
-}
+// --- 热力图核心 (GitHub Style) ---
+function renderHeatmap() {
+    const grid = document.getElementById('heatmapGrid');
+    if (!grid) return;
+    grid.innerHTML = "";
+    
+    // 生成过去 150 天的数据
+    const today = new Date();
+    const daysToShow = 140; // 约 5 个月，适合填满卡片
+    
+    // 构建热力数据字典
+    const counts = {};
+    appData.logs.forEach(l => {
+        counts[l.date] = (counts[l.date] || 0) + 1;
+    });
 
-// --- 新功能：折叠提交区 ---
-function toggleCommitArea() {
-    const el = document.getElementById('submitSection');
-    if (el.style.display === 'none') {
-        el.style.display = 'block';
-        el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        el.style.display = 'none';
+    for (let i = daysToShow; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        
+        const count = counts[dateStr] || 0;
+        let level = 'heat-l0';
+        if (count >= 1) level = 'heat-l1';
+        if (count >= 3) level = 'heat-l2';
+        if (count >= 5) level = 'heat-l3';
+        if (count >= 8) level = 'heat-l4';
+
+        const cell = document.createElement('div');
+        cell.className = `heat-cell ${level}`;
+        cell.title = `${dateStr}: ${count} AC`;
+        grid.appendChild(cell);
     }
 }
 
-function addTodo() { const text = document.getElementById('todoInput').value; const type = document.getElementById('todoType').value; if(!text) return showToast("请输入内容", "error"); const targetDate = getTaskTargetDate(); const isTomorrow = targetDate !== getRealDate(); let icon = "📖"; if(type === '赛') icon = "🏆"; if(type === '学') icon = "🧠"; appData.todos.push({ id: Date.now(), text: `${isTomorrow ? "[明日] " : ""}${icon} ${text}`, rawText: text, date: targetDate, done: false, type: type }); document.getElementById('todoInput').value = ''; saveData(); if(isTomorrow) showToast("已加入明日计划", "success"); }
-function scrollToCommit(text, id) { 
-    const section = document.getElementById('submitSection'); 
-    section.style.display = 'block'; // 强制展开
-    section.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-    section.classList.add('highlight-pulse'); setTimeout(() => section.classList.remove('highlight-pulse'), 1500);
-    const nameInput = document.getElementById('probName'); if(nameInput) { nameInput.value = text || ""; nameInput.focus(); }
-    const hiddenId = document.getElementById('linkedTaskId'); if(hiddenId) hiddenId.value = id; 
-    showToast("AC后自动完成任务", "info"); 
+// --- 战绩分析 (Stats Pro) ---
+function openStatsModal() {
+    openModal('statsModal');
+    
+    // 1. 概览数据
+    setContent('statTotal', appData.logs.length);
+    setContent('statMaxStreak', getStreak(appData));
+    
+    // 计算单日最高
+    const counts = {};
+    let best = 0;
+    appData.logs.forEach(l => {
+        counts[l.date] = (counts[l.date] || 0) + 1;
+        if(counts[l.date] > best) best = counts[l.date];
+    });
+    setContent('statBestDay', best);
+
+    // 2. 趋势图 (Line Chart)
+    const ctxTrend = document.getElementById('trendChart');
+    if(ctxTrend) {
+        // 获取近 7 天数据
+        const labels = [];
+        const data = [];
+        for(let i=6; i>=0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            labels.push(d.getMonth()+1 + '-' + d.getDate());
+            data.push(counts[dStr] || 0);
+        }
+        
+        if(window.trendChartInst) window.trendChartInst.destroy();
+        window.trendChartInst = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'AC 数',
+                    data: data,
+                    borderColor: currentTheme.p,
+                    backgroundColor: currentTheme.p + '33',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { plugins: { legend: {display:false} }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    // 3. 分布图 (Pie Chart)
+    const ctxDist = document.getElementById('distChart');
+    if(ctxDist) {
+        const groups = [0,0,0,0,0]; // 入门, 普及, 提高, 省选, NOI
+        appData.logs.forEach(l => {
+            const conf = RATINGS[l.ratingVal] || RATINGS["1200"];
+            if(conf && conf.group !== undefined) groups[conf.group]++;
+        });
+        
+        if(window.distChartInst) window.distChartInst.destroy();
+        window.distChartInst = new Chart(ctxDist, {
+            type: 'doughnut',
+            data: {
+                labels: ['入门', '普及', '提高', '省选', 'NOI'],
+                datasets: [{
+                    data: groups,
+                    backgroundColor: ['#9ca3af', '#2dd4bf', '#3b82f6', '#a855f7', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: { plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } } }
+        });
+    }
 }
+
+function drawFortune() { const res = FORTUNES[Math.floor(Math.random() * FORTUNES.length)]; setContent('fortuneResult', res); fireConfetti(); }
+function toggleCommitArea() { const el = document.getElementById('submitSection'); if (el.style.display === 'none') { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth' }); } else { el.style.display = 'none'; } }
+function addTodo() { const text = document.getElementById('todoInput').value; const type = document.getElementById('todoType').value; if(!text) return showToast("请输入内容", "error"); const targetDate = getTaskTargetDate(); const isTomorrow = targetDate !== getRealDate(); let icon = "📖"; if(type === '赛') icon = "🏆"; if(type === '学') icon = "🧠"; appData.todos.push({ id: Date.now(), text: `${isTomorrow ? "[明日] " : ""}${icon} ${text}`, rawText: text, date: targetDate, done: false, type: type }); document.getElementById('todoInput').value = ''; saveData(); if(isTomorrow) showToast("已加入明日计划", "success"); }
+function scrollToCommit(text, id) { const section = document.getElementById('submitSection'); section.style.display = 'block'; section.scrollIntoView({ behavior: 'smooth', block: 'center' }); section.classList.add('highlight-pulse'); setTimeout(() => section.classList.remove('highlight-pulse'), 1500); const nameInput = document.getElementById('probName'); if(nameInput) { nameInput.value = text || ""; nameInput.focus(); } const hiddenId = document.getElementById('linkedTaskId'); if(hiddenId) hiddenId.value = id; showToast("AC后自动完成任务", "info"); }
 function submitAC() { const name = document.getElementById('probName').value; const rVal = document.getElementById('ratingSelect').value; const probLink = document.getElementById('probLink').value; const solLink = document.getElementById('solLink').value; const linkedId = document.getElementById('linkedTaskId').value; if(!name || !rVal) return showToast("请填写完整", "error"); const conf = RATINGS[rVal]; if(parseInt(rVal)) appData.maxRating = Math.max(appData.maxRating, parseInt(rVal)); if (linkedId) { const task = appData.todos.find(t => t.id == linkedId); if(task) task.done = true; } else { const match = appData.todos.find(t => t.text.includes(name) && !t.done); if(match) match.done = true; } appData.logs.unshift({ id: Date.now(), date: getRealDate(), name, ratingVal: rVal, link: probLink, sol: solLink, xp: conf.xp }); appData.xp += conf.xp; const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1; if(nextLv > appData.level) { appData.level = nextLv; showToast(`🎉 升级啦 LV.${nextLv}`, "success"); } document.getElementById('probName').value = ''; document.getElementById('probLink').value = ''; document.getElementById('solLink').value = ''; document.getElementById('linkedTaskId').value = ''; saveData(); openModal('acModal'); fireConfetti(); }
 function processBatch() { const text = document.getElementById('batchInput').value; if (!text.trim()) return showToast("请输入内容", "error"); const lines = text.split('\n'); let count = 0; for (let i = lines.length - 1; i >= 0; i--) { const line = lines[i].trim(); if (!line) continue; let match = line.match(/^(\d+)\s+(.+)$/); let validKey = "1200"; let name = ""; if (match) { const num = parseInt(match[1]); name = match[2]; if (num >= 2200) validKey = "2200"; else if (num >= 2000) validKey = "2000"; else if (num >= 1750) validKey = "1750"; else if (num >= 1500) validKey = "1500"; else validKey = "1200"; appData.maxRating = Math.max(appData.maxRating, num); } else { const charMatch = line.match(/^([红橙黄绿蓝紫黑])\s+(.+)$/); if (charMatch) { const colorMap = {'红':'luogu_red', '橙':'luogu_orange', '黄':'luogu_yellow', '绿':'luogu_green', '蓝':'luogu_blue', '紫':'luogu_purple', '黑':'luogu_black'}; validKey = colorMap[charMatch[1]] || "1200"; name = charMatch[2]; } else { continue; } } const config = RATINGS[validKey]; appData.logs.unshift({ id: Date.now() + i, date: getRealDate(), name: name, ratingVal: validKey, link: "", sol: "", xp: config.xp }); appData.xp += config.xp; count++; } if (count > 0) { const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1; if (nextLv > appData.level) { appData.level = nextLv; } saveData(); closeModal('batchModal'); document.getElementById('batchInput').value = ""; showToast(`⚡ 导入 ${count} 题`, "success"); fireConfetti(); } else { showToast("格式错误", "error"); } }
 
@@ -101,12 +183,12 @@ function renderUI() {
     const nextXP = 50 * Math.pow(appData.level, 2); setContent('nextXP', nextXP);
     const prevXP = 50 * Math.pow(appData.level - 1, 2); const pct = ((appData.xp - prevXP) / (nextXP - prevXP)) * 100;
     setStyle('xpFill', 'width', `${Math.max(0, Math.min(pct, 100))}%`); setContent('totalAC', appData.logs.length);
-    renderChart(); renderTodos(); renderHistory(); renderLogs(); renderCalendar(); renderCountdowns();
+    renderChart(); renderTodos(); renderHistory(); renderLogs(); renderCountdowns();
+    renderHeatmap(); // ★ 使用热力图替代日历
 }
 function renderTodos() { const todayStr = getRealDate(); const list = document.getElementById('todoList'); if(!list) return; list.innerHTML = ""; const activeTodos = appData.todos.filter(t => t.date >= todayStr); const todayOnly = appData.todos.filter(t => t.date === todayStr); const doneCount = todayOnly.filter(t => t.done).length; const progress = todayOnly.length ? Math.round((doneCount/todayOnly.length)*100) : 0; setStyle('dailyProgress', 'width', `${progress}%`); setContent('progressText', `${progress}%`); const bar = document.getElementById('dailyProgress'); if(bar) { if(progress === 100 && todayOnly.length > 0) bar.style.backgroundColor = "#10b981"; else bar.style.backgroundColor = currentTheme.p; } if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日无任务</div>`; activeTodos.sort((a, b) => { if (a.date !== b.date) return a.date.localeCompare(b.date); return a.done - b.done; }); activeTodos.forEach(t => { const goBtn = !t.done ? `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀</button>` : ''; list.innerHTML += `<div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}"> <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div> ${goBtn} <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span> </div>`; }); }
 function renderHistory() { const histList = document.getElementById('historyList'); if(!histList) return; histList.innerHTML = ""; if(appData.history.length === 0) { histList.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无历史</div>`; return; } appData.history.slice(0, 7).forEach(h => { histList.innerHTML += `<div class="history-item"> <span>${h.date}</span> <span>完成度: <b style="color:${h.pct>=80?'#10b981':'#64748b'}">${h.pct}%</b> (${h.done}/${h.total})</span> </div>`; }); }
 function renderLogs() { const searchInput = document.getElementById('searchInput'); const searchText = searchInput ? searchInput.value.toLowerCase() : ""; const logBox = document.getElementById('logList'); if(!logBox) return; logBox.innerHTML = ''; const filteredLogs = appData.logs.filter(l => l.name.toLowerCase().includes(searchText)); if(filteredLogs.length === 0 && !searchText) { logBox.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无记录</div>`; return; } filteredLogs.slice(0, 30).forEach(l => { const conf = RATINGS[l.ratingVal] || RATINGS["1200"]; let links = ''; if(l.link) links += `<a href="${escapeHtml(l.link)}" target="_blank" class="link-btn link-prob">📄 原题</a>`; if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 代码</a>`; const div = document.createElement('div'); div.className = 'log-card'; div.style.borderLeftColor = conf.color; div.innerHTML = `<div style="flex:1"> <div style="font-weight:bold;display:flex;align-items:center;flex-wrap:wrap;"> <span class="rating-tag" style="background:${conf.color}">${conf.label}</span>${escapeHtml(l.name)} </div> <div style="font-size:0.8rem;color:var(--text-light);margin-top:5px;">${l.date} · +${l.xp} XP</div> </div> <div style="display:flex;align-items:center;"> ${links} <div class="btn-del" onclick="requestDelete('log', ${l.id})">✕</div> </div>`; logBox.appendChild(div); }); }
-function renderCalendar() { const grid = document.getElementById('calGrid'); if(!grid) return; grid.innerHTML = ""; const now = new Date(); const y = now.getFullYear(); const m = now.getMonth(); setContent('calTitle', `${y}年 ${m+1}月`); const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const activeDays = {}; appData.logs.forEach(l => activeDays[l.date] = true); const todayStr = getRealDate(); let streak = 0; for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div')); for(let d=1; d<=daysInMonth; d++) { const dStr = String(d).padStart(2,'0'); const mStr = String(m+1).padStart(2,'0'); const dateStr = `${y}-${mStr}-${dStr}`; const el = document.createElement('div'); el.className = `cal-cell ${activeDays[dateStr] ? 'active' : ''} ${dateStr===todayStr?'today':''}`; el.innerText = d; grid.appendChild(el); if(new Date(dateStr) <= now && activeDays[dateStr]) streak++; else if(new Date(dateStr) < now && !activeDays[dateStr]) streak = 0; } setContent('streakDays', streak); }
 function renderChart() { const ctx = document.getElementById('radarChart'); if (ctx && window.Chart) { const groupStats = [0, 0, 0, 0, 0]; appData.logs.forEach(l => { const conf = RATINGS[l.ratingVal] || RATINGS["1200"]; if (conf) groupStats[conf.group]++; }); if (window.myRadarChart) window.myRadarChart.destroy(); const isDark = document.body.classList.contains('dark'); const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'; const textColor = isDark ? '#94a3b8' : '#64748b'; const themeColor = currentTheme.p; window.myRadarChart = new Chart(ctx, { type: 'radar', data: { labels: ['入门', '普及', '提高', '省选', 'NOI'], datasets: [{ label: 'AC', data: groupStats, backgroundColor: themeColor + '33', borderColor: themeColor, pointBackgroundColor: currentTheme.a, pointBorderColor: '#fff', borderWidth: 2 }] }, options: { maintainAspectRatio: false, scales: { r: { angleLines: { color: gridColor }, grid: { color: gridColor }, pointLabels: { color: textColor, font: { size: 10, family: 'JetBrains Mono' } }, ticks: { display: false, backdropColor: 'transparent' } } }, plugins: { legend: { display: false } } } }); } }
 function renderCountdowns() { const list = document.getElementById('countdownList'); if(!list) return; list.innerHTML = ""; if (!appData.targets || appData.targets.length === 0) { list.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; return; } appData.targets.sort((a, b) => new Date(a.date) - new Date(b.date)); appData.targets.forEach((t) => { const diff = Math.ceil((new Date(t.date) - new Date()) / 86400000); const urgentClass = (diff <= 7 && diff >= 0) ? 'urgent' : ''; const dayText = diff >= 0 ? `${diff} 天` : '已结束'; list.innerHTML += `<div class="cd-row"> <span class="cd-name">${escapeHtml(t.name)}</span> <span class="cd-days ${urgentClass}">${dayText}</span> </div>`; }); }
 function renderTargetList() { const list = document.getElementById('targetList'); if(!list) return; list.innerHTML = ""; (appData.targets || []).forEach((t, idx) => { list.innerHTML += `<div class="target-item"> <span>${escapeHtml(t.name)} <small>(${t.date})</small></span> <span class="del-target" onclick="removeTarget(${idx})">✕</span> </div>`; }); }

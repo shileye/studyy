@@ -5,25 +5,25 @@
     --border: #e2e8f0;
     --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     --gold: #f59e0b; --danger: #ef4444; --success: #10b981;
+    /* 热力图颜色阶梯 */
+    --h0: #e2e8f0; --h1: #c7d2fe; --h2: #818cf8; --h3: #4f46e5; --h4: #312e81;
 }
 body.dark {
     --bg: #0f172a; --card: #1e293b;
     --primary: #818cf8; --accent: #f472b6;
     --text-main: #f1f5f9; --text-light: #94a3b8;
     --border: #334155; --shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
+    --h0: #334155; /* 深色模式热力图底色 */
 }
-* { box-sizing: border-box; transition: background 0.3s, color 0.3s, border 0.3s; outline: none; }
+* { box-sizing: border-box; transition: background 0.3s, color 0.3s, border 0.3s, outline: none; }
 body { margin: 0; padding: 20px; background: var(--bg); color: var(--text-main); font-family: 'Noto Serif SC', serif; min-height: 100vh; display: flex; justify-content: center; }
 
 #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -999; }
 
 .layout-container {
-    width: 100%; max-width: 1200px;
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    grid-template-rows: auto 1fr auto;
-    gap: 25px;
-    grid-template-areas: "header header" "sidebar main" "footer footer";
+    width: 100%; max-width: 1200px; display: grid;
+    grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto;
+    gap: 25px; grid-template-areas: "header header" "sidebar main" "footer footer";
 }
 
 .header-section { grid-area: header; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: var(--shadow); position: relative; text-align: center; border-left: 5px solid var(--primary); overflow: hidden; }
@@ -41,9 +41,7 @@ body.dark .card { border-color: var(--border); }
 
 .sidebar { grid-area: sidebar; }
 .countdown-card { border-left: 4px solid var(--danger); background: linear-gradient(145deg, var(--card), rgba(239, 68, 68, 0.03)); }
-/* 每日运势卡片 */
 .gacha-card { border-left: 4px solid #8b5cf6; background: linear-gradient(145deg, var(--card), rgba(139, 92, 246, 0.05)); }
-
 .card-title { margin: 0; font-size: 1rem; font-weight: bold; color: var(--text-main); }
 .cd-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
 .cd-days.urgent { color: var(--danger); animation: pulse 1.5s infinite; }
@@ -67,16 +65,19 @@ body.dark .card { border-color: var(--border); }
 .btn-link { background: var(--border); border: none; padding: 10px; font-size: 0.8rem; cursor: pointer; border-radius: 6px; color: var(--text-main); text-align: center; font-weight: bold; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .btn-link:hover { background: var(--primary); color: white; transform: translateY(-2px); }
 
-.calendar-header { text-align: center; font-weight: bold; margin-bottom: 10px; font-family: 'JetBrains Mono'; }
-.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.75rem; }
-.cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: rgba(0,0,0,0.03); color: var(--text-light); font-family: 'JetBrains Mono'; }
-.cal-cell.today { border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
-.cal-cell.active { background: var(--primary); color: white; }
+/* Heatmap 样式 */
+.heatmap-container { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 10px; justify-content: flex-start; }
+.heat-cell { width: 10px; height: 10px; border-radius: 2px; background: var(--h0); transition: transform 0.2s; }
+.heat-cell:hover { transform: scale(1.5); z-index: 10; border: 1px solid var(--text-main); }
+.heat-l1 { background: var(--h1); }
+.heat-l2 { background: var(--h2); }
+.heat-l3 { background: var(--h3); }
+.heat-l4 { background: var(--h4); box-shadow: 0 0 5px var(--primary); }
 .streak-info { text-align: center; margin-top: 10px; font-size: 0.8rem; padding-top: 8px; border-top: 1px solid var(--border); }
+
 .chart-wrapper { position: relative; height: 200px; width: 100%; }
 
 .main-content { grid-area: main; }
-/* 平衡布局：双列Grid */
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 .date-badge { font-size: 0.75rem; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono'; }
@@ -122,6 +123,16 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
 .modal.show { display: flex; animation: fadeIn 0.2s; }
 .modal-card { background: var(--card); padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideUp 0.3s; }
+/* 宽版弹窗 (Stats) */
+.stats-card-wide { width: 95%; max-width: 700px; }
+.stats-overview { display: flex; justify-content: space-around; margin-bottom: 25px; background: rgba(79, 70, 229, 0.05); padding: 15px; border-radius: 12px; }
+.stat-box { text-align: center; }
+.stat-val { font-size: 2rem; font-weight: bold; color: var(--primary); font-family: 'JetBrains Mono'; }
+.stat-label { font-size: 0.8rem; color: var(--text-light); }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.chart-container { background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+.chart-container h4 { margin: 0 0 10px 0; font-size: 0.9rem; text-align: center; opacity: 0.7; }
+
 .list-scroll { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
 .batch-textarea { font-family: 'JetBrains Mono'; font-size: 0.85rem; resize: vertical; margin-bottom: 10px; }
 .hint-text { font-size: 0.8rem; color: var(--text-light); margin-bottom: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 6px; }
@@ -146,4 +157,5 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     .header-section { text-align: left; }
     .theme-switch { top: 35px; }
     .stats-grid { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
 }

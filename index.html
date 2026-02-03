@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 V14</title>
+    <title>ICPC 2026 // 决战时刻 V15</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,6 +12,40 @@
 
 <canvas id="confetti-canvas"></canvas>
 <input type="file" id="fileInput" style="display: none;" onchange="importData(this)">
+
+<div class="modal" id="statsModal">
+    <div class="modal-card stats-card-wide" onclick="event.stopPropagation()">
+        <h3 class="section-title">📈 战绩深度分析</h3>
+        
+        <div class="stats-overview">
+            <div class="stat-box">
+                <div class="stat-val" id="statTotal">0</div>
+                <div class="stat-label">总 AC 数</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="statMaxStreak">0</div>
+                <div class="stat-label">最高连击 (天)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="statBestDay">0</div>
+                <div class="stat-label">单日最高 (题)</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-container">
+                <h4>近 7 天手感趋势</h4>
+                <canvas id="trendChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h4>难度分布</h4>
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+
+        <button class="btn btn-outline full-width" style="margin-top:15px;" onclick="closeModal('statsModal')">关闭面板</button>
+    </div>
+</div>
 
 <div class="modal" id="targetModal">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -90,9 +124,9 @@
 
         <div class="card gacha-card clickable" onclick="drawFortune()">
             <div style="text-align:center;">
-                <div style="font-size:2rem; margin-bottom:5px;">🔮</div>
-                <h4 style="margin:0;">每日运势 (点击抽取)</h4>
-                <div id="fortuneResult" style="margin-top:10px; font-weight:bold; color:var(--primary); min-height:1.2em;">???</div>
+                <div style="font-size:1.5rem; margin-bottom:5px;">🔮</div>
+                <h4 style="margin:0; font-size:0.9rem;">每日运势</h4>
+                <div id="fortuneResult" style="margin-top:5px; font-weight:bold; color:var(--primary); font-size:0.85rem; min-height:1.2em;">点击抽取</div>
             </div>
         </div>
 
@@ -114,31 +148,25 @@
                 <div class="xp-text"><span>LV.<span id="lvNum">1</span></span><span><span id="curXP">0</span> / <span id="nextXP">100</span></span></div>
                 <div class="xp-track"><div class="xp-bar" id="xpFill"></div></div>
             </div>
-            <div class="theme-dots">
-                <div class="dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
-                <div class="dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
-                <div class="dot" style="background:#ef4444;" onclick="changeColor('#ef4444', '#facc15')"></div>
-                <div class="dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
-                <div class="dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
-            </div>
+            
             <div class="action-grid">
+                <button class="btn-link" onclick="openStatsModal()" style="grid-column:span 2; background:var(--primary); color:white;">📈 战绩深度分析</button>
                 <a href="https://ac.nowcoder.com/acm/contest/vip-index" target="_blank" class="btn-link">🐮 牛客</a>
                 <a href="https://codeforces.com/contests" target="_blank" class="btn-link">🟦 CF</a>
                 <a href="https://atcoder.jp/" target="_blank" class="btn-link">⬛ ABC</a>
                 <a href="https://clist.by/" target="_blank" class="btn-link">📅 Clist</a>
                 <button class="btn-link" onclick="openModal('batchModal')">⚡ 批量</button>
                 <button class="btn-link" onclick="exportData()">💾 备份</button>
-                <button class="btn-link" onclick="document.getElementById('fileInput').click()" style="grid-column: span 2;">📂 读档</button>
             </div>
         </div>
 
-        <div class="card calendar-card">
-            <div class="calendar-header" id="calTitle">Loading...</div>
-            <div class="calendar-weekdays">
-                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        <div class="card calendar-card" title="近5个月活跃度">
+            <div class="calendar-header" style="text-align:left; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between;">
+                <span>🔥 活跃度 (Heatmap)</span>
+                <span style="font-size:0.75rem; opacity:0.7;">Less ⬜ 🟩 🟦 More</span>
             </div>
-            <div class="calendar-grid" id="calGrid"></div>
-            <div class="streak-info">🔥 连续打卡: <b id="streakDays" style="color:var(--accent)">0</b> 天</div>
+            <div class="heatmap-container" id="heatmapGrid"></div>
+            <div class="streak-info">🔥 当前连击: <b id="streakDays" style="color:var(--accent)">0</b> 天</div>
         </div>
     </aside>
 
@@ -158,11 +186,10 @@
                     <option value="赛">🏆 比赛/VP</option>
                     <option value="学">🧠 补题</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="输入任务..." style="flex:4;">
+                <input type="text" id="todoInput" placeholder="输入任务 (点击 Go 去提交 AC)" style="flex:4;">
                 <button class="btn btn-primary" onclick="addTodo()">添加</button>
             </div>
             <div id="todoList" class="task-list"></div>
-            
             <button class="btn btn-outline full-width" style="margin-top:10px; border-style:dashed;" onclick="toggleCommitArea()">🖊️ 打开/关闭 提交代码区</button>
         </div>
 
