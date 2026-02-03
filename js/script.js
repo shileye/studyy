@@ -6,14 +6,12 @@ window.onerror = function(msg, url, line) {
 
 const DB_KEY = "algo_v7_cow";
 
-// ★★★ 逻辑日：当前时间+1小时（即23:00后算明天） ★★★
+// ★★★ 熬夜党逻辑：凌晨4点前，算作昨天 ★★★
 function getLogicalDate() {
     const now = new Date();
-    // 逻辑：23:00 以后算作“明天”
-    // 方法：给当前时间加1小时，然后取日期
-    // 例子：2月3日 23:30 -> 加1小时 -> 2月4日 00:30 -> 显示 2026-02-04
-    // 例子：2月4日 00:40 -> 加1小时 -> 2月4日 01:40 -> 显示 2026-02-04
-    now.setHours(now.getHours() + 1);
+    if (now.getHours() < 4) {
+        now.setDate(now.getDate() - 1);
+    }
     return now.toISOString().split('T')[0];
 }
 
@@ -30,8 +28,7 @@ const RATINGS = {
     "luogu_blue":   { color: "#3498DB", label: "提高+/省选-", xp: 70, group: 3 },
     "luogu_purple": { color: "#9D3DCF", label: "省选/NOI-", xp: 90, group: 4 },
     "luogu_black":  { color: "#0E1D69", label: "NOI/NOI+", xp: 120, group: 4 },
-    // ★★★ 新增：Unrated 选项 ★★★
-    "unrated": { color: "#64748b", label: "Unrated", xp: 20, group: 0 }
+    "unrated":      { color: "#64748b", label: "Unrated", xp: 20, group: 0 }
 };
 
 const QUOTES = [
@@ -72,7 +69,9 @@ window.onload = () => {
         loadTimer();
         
         const dateEl = document.getElementById('logicalDateDisplay');
-        if(dateEl) dateEl.innerText = `当前逻辑日: ${getLogicalDate()}`;
+        const nowHour = new Date().getHours();
+        const isLateNight = nowHour < 4;
+        if(dateEl) dateEl.innerText = `${getLogicalDate()} ${isLateNight ? '(熬夜修仙中 🌙)' : '(今日)'}`;
 
         renderUI();
         renderCountdowns();
@@ -89,7 +88,6 @@ window.onload = () => {
         }
     } catch(err) {
         console.error("Init Error:", err);
-        // 如果这里报错，说明数据或者环境有大问题，不弹窗打扰，只在控制台
     }
 };
 
@@ -161,7 +159,7 @@ function addTodo() {
     else display += "📖 ";
     display += text;
 
-    const logicalDate = getLogicalDate(); // 使用逻辑日
+    const logicalDate = getLogicalDate();
 
     appData.todos.push({ id: Date.now(), text: display, type: type, date: logicalDate, done: false });
     document.getElementById('todoInput').value = '';
@@ -186,7 +184,7 @@ function renderUI() {
     });
 
     const groupStats = [0, 0, 0, 0, 0]; 
-    appData.logs.forEach(l => { const conf = RATINGS[l.ratingVal]; if (conf) groupStats[conf.group]++; });
+    appData.logs.forEach(l => { const conf = RATINGS[l.ratingVal] || RATINGS["1200"]; if (conf) groupStats[conf.group]++; });
     
     const ctx = document.getElementById('radarChart');
     if (ctx && window.Chart) {
@@ -207,7 +205,7 @@ function renderUI() {
 
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
-    const today = getLogicalDate(); // 使用逻辑日
+    const today = getLogicalDate(); 
     
     const showTodos = appData.todos.filter(t => !t.done || t.date === today);
     const completedToday = appData.todos.filter(t => t.date === today && t.done).length;
@@ -257,8 +255,40 @@ function renderUI() {
         `;
         logBox.appendChild(div);
     });
+
+    // ★★★ 找回日历渲染逻辑 ★★★
+    const grid = document.getElementById('calGrid');
+    if(grid) {
+        grid.innerHTML = '';
+        const now = new Date();
+        const y = now.getFullYear(); const m = now.getMonth();
+        document.getElementById('calTitle').innerText = `${y}年 ${m+1}月`;
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m+1, 0).getDate();
+        
+        const calStats = {};
+        appData.logs.forEach(l => { calStats[l.date.split('T')[0]] = 'active'; });
+        // 高亮逻辑日
+        const todayStr = getLogicalDate();
+
+        for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+        let streak = 0; 
+        for(let d=1; d<=daysInMonth; d++) {
+            const dayStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const cell = document.createElement('div');
+            cell.className = `cal-cell ${calStats[dayStr] || ''}`;
+            if (dayStr === todayStr) cell.classList.add('today');
+            cell.innerText = d; grid.appendChild(cell);
+            
+            // 简单连击计算
+            if (new Date(dayStr) <= new Date() && calStats[dayStr]) streak++;
+            else if (new Date(dayStr) < new Date() && !calStats[dayStr]) streak = 0;
+        }
+        document.getElementById('streakDays').innerText = streak;
+    }
 }
 
+// --- 基础工具函数 ---
 function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderUI(); }
 function changeColor(p, a) { currentTheme = { p, a }; applyTheme(p, a); localStorage.setItem('themeColors', JSON.stringify(currentTheme)); renderUI(); showToast("主题已切换", "success"); }
 function applyTheme(p, a) { const root = document.documentElement; root.style.setProperty('--primary', p); root.style.setProperty('--accent', a); }

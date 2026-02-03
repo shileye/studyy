@@ -147,6 +147,11 @@
                 </div>
             </div>
         </div>
+
+        <div class="card">
+            <div style="font-weight:bold; margin-bottom:10px;" id="calTitle"></div>
+            <div class="calendar-grid" id="calGrid"></div>
+        </div>
     </div>
 
     <div class="main">
@@ -167,7 +172,7 @@
                     <option value="赛">🏆 比赛</option>
                     <option value="学">🧠 补题</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="任务内容 (23点后自动算作明天)" style="flex:3;">
+                <input type="text" id="todoInput" placeholder="任务内容 (4点前算作昨天)" style="flex:3;">
                 <button class="btn-submit" style="width:auto; padding:10px 20px;" onclick="addTodo()">添加</button>
             </div>
             <div class="todo-list" id="todoList"></div>
