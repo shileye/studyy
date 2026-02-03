@@ -43,7 +43,6 @@ window.onload = () => {
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    // 切换主题时重新渲染图表以适配颜色
     renderUI(); 
 }
 
@@ -74,7 +73,6 @@ function getTodayCount(d) {
 function addTodo() {
     const val = document.getElementById('todoInput').value;
     if (!val) return;
-    // 使用 escapeHtml 处理输入
     appData.todos.push({ id: Date.now(), text: val, date: new Date().toISOString().split('T')[0], done: false });
     document.getElementById('todoInput').value = '';
     saveData();
@@ -82,16 +80,12 @@ function addTodo() {
 
 function deleteLog(id) {
     if(!confirm("确定要删除这条记录吗？XP也会被扣除哦！")) return;
-    
     const idx = appData.logs.findIndex(l => l.id === id);
     if(idx !== -1) {
         const log = appData.logs[idx];
-        appData.xp = Math.max(0, appData.xp - log.xp); // 扣分
-        
-        // 重新计算等级
+        appData.xp = Math.max(0, appData.xp - log.xp);
         const lv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
         appData.level = lv;
-
         appData.logs.splice(idx, 1);
         saveData();
     }
@@ -111,7 +105,6 @@ function setPendingTodo(text) {
 
 function submitAC() {
     const name = document.getElementById('probName').value;
-    // Toast 替代 Alert
     if (!name) return showToast("题目名称必填", "error");
     
     const rVal = document.getElementById('ratingSelect').value;
@@ -158,7 +151,6 @@ function closeAC() {
 function generateAIPrompt() {
     const today = new Date().toISOString().split('T')[0];
     const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
-    
     if (todayLogs.length === 0) return showToast("今天还没做题呢！", "info");
     
     const problemList = todayLogs.map(l => `- ${l.name} (${RATINGS[l.ratingVal].label})`).join('\n');
@@ -170,7 +162,6 @@ function generateAIPrompt() {
 function copyReport() {
     const today = new Date().toISOString().split('T')[0];
     const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
-    
     if(todayLogs.length === 0) return showToast("今天无记录", "error");
     
     let stats = {};
@@ -207,13 +198,10 @@ function renderUI() {
     const stats = { "1200":0, "1500":0, "1750":0, "2000":0, "2200":0 };
     appData.logs.forEach(l => { if(stats[l.ratingVal]!==undefined) stats[l.ratingVal]++; });
     
-    // ★★★ 核心：渲染雷达图 ★★★
     const ctx = document.getElementById('radarChart');
     if (ctx && window.Chart) {
         const levelData = [ stats["1200"], stats["1500"], stats["1750"], stats["2000"], stats["2200"] ];
-        
         if (window.myRadarChart) window.myRadarChart.destroy();
-        
         const isDark = document.body.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -373,4 +361,71 @@ function showToast(msg, type = 'info') {
         el.style.animation = 'fadeOut 0.3s forwards';
         setTimeout(() => el.remove(), 300);
     }, 3000);
+}
+
+// --- 批量处理逻辑 ---
+function openBatchModal() {
+    const modal = document.getElementById('batchModal');
+    modal.classList.add('show');
+    modal.onclick = (e) => {
+        if(e.target === modal) closeBatchModal();
+    }
+}
+
+function closeBatchModal() {
+    document.getElementById('batchModal').classList.remove('show');
+}
+
+function processBatch() {
+    const text = document.getElementById('batchInput').value;
+    if (!text.trim()) return showToast("请输入内容", "error");
+
+    const lines = text.split('\n');
+    let count = 0;
+    let totalXP = 0;
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const match = line.match(/^(\d+)\s+(.+)$/);
+        
+        if (match) {
+            let ratingStr = match[1];
+            const name = match[2];
+            let validKey = "1200"; 
+            const num = parseInt(ratingStr);
+            if (num >= 2200) validKey = "2200";
+            else if (num >= 2000) validKey = "2000";
+            else if (num >= 1750) validKey = "1750";
+            else if (num >= 1500) validKey = "1500";
+            else validKey = "1200";
+
+            const config = RATINGS[validKey];
+            appData.maxRating = Math.max(appData.maxRating, num);
+            appData.logs.unshift({
+                id: Date.now() + i, 
+                date: new Date().toISOString(),
+                name: name,
+                ratingVal: validKey,
+                link: "",
+                sol: "",
+                xp: config.xp
+            });
+            appData.xp += config.xp;
+            totalXP += config.xp;
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
+        if (nextLv > appData.level) { appData.level = nextLv; }
+        saveData();
+        closeBatchModal();
+        document.getElementById('batchInput').value = "";
+        showToast(`成功导入 ${count} 题！获得 ${totalXP} XP`, "success");
+        fireConfetti();
+    } else {
+        showToast("格式无法识别，请使用：分数 题目名", "error");
+    }
 }

@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code & Sorrow // 算法日记</title>
-    
     <link rel="stylesheet" href="css/style.css">
-    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -38,6 +35,23 @@
     </div>
     <div class="ac-text">AC！恭喜通过！</div>
     <div class="ac-subtext">点击任意处关闭</div>
+</div>
+
+<div class="ac-modal" id="batchModal">
+    <div class="card batch-card" onclick="event.stopPropagation()">
+        <h3 style="margin-top:0;">⚡ 批量速记 (Batch Import)</h3>
+        <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">
+            每行一条，格式：<b>Rating 题目名称</b><br>
+            例如：<br>
+            <code class="code-snippet">1200 A. Walking Master</code><br>
+            <code class="code-snippet">1800 D. The Butcher</code>
+        </p>
+        <textarea id="batchInput" class="batch-input" rows="8" placeholder="在这里粘贴你的题目列表..."></textarea>
+        <div class="row">
+            <button class="btn" style="background:var(--border); color:var(--text-main); flex:1;" onclick="closeBatchModal()">取消</button>
+            <button class="btn btn-ai" style="flex:1;" onclick="processBatch()">🚀 一键入库</button>
+        </div>
+    </div>
 </div>
 
 <div class="container">
@@ -90,6 +104,7 @@
             <div class="btn-group">
                 <button class="btn btn-ai" onclick="generateAIPrompt()">🤖 复制 AI 复盘提示词</button>
                 <button class="btn btn-share" onclick="copyReport()">📋 复制 PRO 战报</button>
+                <button class="btn" style="background:var(--text-main); grid-column: 1 / -1;" onclick="openBatchModal()">⚡ 批量速记模式</button>
             </div>
         </div>
 
@@ -136,6 +151,5 @@
 </div>
 
 <script src="js/script.js"></script>
-
 </body>
 </html>
