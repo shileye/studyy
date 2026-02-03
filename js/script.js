@@ -1,4 +1,4 @@
-// 全局错误捕获，防止代码炸了你不知道
+// 全局错误捕获
 window.onerror = function(msg, url, line) {
     alert("系统报错: " + msg + "\n请截图发给开发者。");
     return false;
@@ -6,13 +6,14 @@ window.onerror = function(msg, url, line) {
 
 const DB_KEY = "algo_v7_cow";
 
-// 23点结算逻辑
+// ★★★ 逻辑日：当前时间+1小时（即23:00后算明天） ★★★
 function getLogicalDate() {
     const now = new Date();
-    // 如果当前时间 >= 23点，算作"明天"
-    if (now.getHours() >= 23) {
-        now.setDate(now.getDate() + 1);
-    }
+    // 逻辑：23:00 以后算作“明天”
+    // 方法：给当前时间加1小时，然后取日期
+    // 例子：2月3日 23:30 -> 加1小时 -> 2月4日 00:30 -> 显示 2026-02-04
+    // 例子：2月4日 00:40 -> 加1小时 -> 2月4日 01:40 -> 显示 2026-02-04
+    now.setHours(now.getHours() + 1);
     return now.toISOString().split('T')[0];
 }
 
@@ -28,7 +29,9 @@ const RATINGS = {
     "luogu_green":  { color: "#52C41A", label: "普及+/提高", xp: 50, group: 2 },
     "luogu_blue":   { color: "#3498DB", label: "提高+/省选-", xp: 70, group: 3 },
     "luogu_purple": { color: "#9D3DCF", label: "省选/NOI-", xp: 90, group: 4 },
-    "luogu_black":  { color: "#0E1D69", label: "NOI/NOI+", xp: 120, group: 4 }
+    "luogu_black":  { color: "#0E1D69", label: "NOI/NOI+", xp: 120, group: 4 },
+    // ★★★ 新增：Unrated 选项 ★★★
+    "unrated": { color: "#64748b", label: "Unrated", xp: 20, group: 0 }
 };
 
 const QUOTES = [
@@ -44,6 +47,7 @@ const BADGES = [
     { id: "b4", icon: "⚡", title: "肝帝", check: (d) => getTodayCount(d) >= 5 },
     { id: "b5", icon: "⚔️", title: "挑战者", check: (d) => d.maxRating >= 1600 },
     { id: "b6", icon: "👑", title: "大师", check: (d) => d.maxRating >= 1900 },
+    { id: "b7", icon: "👽", title: "传说", check: (d) => d.maxRating >= 2100 },
     { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
 ];
 
@@ -56,8 +60,6 @@ let timerState = { isRunning: false, startTime: 0, totalTime: 0, lastDate: "" };
 window.onload = () => {
     try {
         if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-        
-        // 安全读取颜色配置
         try {
             const savedColors = localStorage.getItem('themeColors');
             if(savedColors) {
@@ -66,10 +68,9 @@ window.onload = () => {
             }
         } catch(e) { console.warn("Theme reset"); }
 
-        loadData(); // 加载核心数据
-        loadTimer(); // 加载计时器
+        loadData();
+        loadTimer();
         
-        // 强制确保元素存在，防止报错
         const dateEl = document.getElementById('logicalDateDisplay');
         if(dateEl) dateEl.innerText = `当前逻辑日: ${getLogicalDate()}`;
 
@@ -87,18 +88,16 @@ window.onload = () => {
             updateTimerDisplay(timerState.totalTime);
         }
     } catch(err) {
-        console.error("Critical Init Error:", err);
-        alert("初始化失败，数据可能损坏。建议清除浏览器缓存或使用 '备份/读档' 功能尝试恢复。");
+        console.error("Init Error:", err);
+        // 如果这里报错，说明数据或者环境有大问题，不弹窗打扰，只在控制台
     }
 };
 
-// --- 数据安全加载 ---
 function loadData() {
     try {
         const saved = localStorage.getItem(DB_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
-            // 混合默认值，防止旧数据缺少字段导致的 undefined 报错
             appData = { ...appData, ...parsed };
             if(!appData.targets) appData.targets = [];
             if(!appData.todos) appData.todos = [];
@@ -111,7 +110,6 @@ function loadData() {
 }
 function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
 
-// --- 倒计时逻辑 ---
 function getTargets() { return appData.targets || []; }
 function openTargetModal() { document.getElementById('targetModal').classList.add('show'); renderTargetList(); }
 function closeTargetModal() { document.getElementById('targetModal').classList.remove('show'); }
@@ -152,7 +150,6 @@ function renderCountdowns() {
     });
 }
 
-// --- 任务管理 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
@@ -171,7 +168,6 @@ function addTodo() {
     saveData();
 }
 
-// --- 渲染逻辑 ---
 function renderUI() {
     document.getElementById('lvNum').innerText = appData.level;
     document.getElementById('curXP').innerText = appData.xp;
@@ -209,9 +205,6 @@ function renderUI() {
         });
     }
 
-    const sortedKeys = Object.keys(RATINGS).sort((a,b) => RATINGS[b].xp - RATINGS[a].xp);
-    
-    // Todos 渲染
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
     const today = getLogicalDate(); // 使用逻辑日
@@ -240,7 +233,6 @@ function renderUI() {
         </div>`;
     });
 
-    // Logs 渲染
     const searchText = document.getElementById('searchInput')?.value.toLowerCase() || "";
     const logBox = document.getElementById('logList');
     logBox.innerHTML = '';
@@ -267,7 +259,6 @@ function renderUI() {
     });
 }
 
-// --- 基础工具函数 ---
 function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderUI(); }
 function changeColor(p, a) { currentTheme = { p, a }; applyTheme(p, a); localStorage.setItem('themeColors', JSON.stringify(currentTheme)); renderUI(); showToast("主题已切换", "success"); }
 function applyTheme(p, a) { const root = document.documentElement; root.style.setProperty('--primary', p); root.style.setProperty('--accent', a); }
