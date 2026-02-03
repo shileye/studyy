@@ -18,7 +18,7 @@ const RATINGS = {
     "unrated":      { color: "#64748b", label: "Unrated", xp: 20, group: 0 }
 };
 
-// --- 语录库 (扩充至 30 条) ---
+// --- 语录库 (30+条) ---
 const QUOTES = [
     {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
     {t:"Talk is cheap. Show me the code.", a:"Linus"},
@@ -77,7 +77,7 @@ window.onload = () => {
 
         setInterval(checkDailySettlement, 60000); 
         updateQuote();
-        setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000); // 30秒换一次语录
+        setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000); 
 
         if(timerState.isRunning) { startTimerTicker(); updateTimerUI(true); } else { updateTimerDisplay(timerState.totalTime); }
 
@@ -223,6 +223,10 @@ function renderChart() {
 function renderCountdowns() {
     const list = document.getElementById('countdownList'); if(!list) return; list.innerHTML = "";
     if (!appData.targets || appData.targets.length === 0) { list.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; return; }
+    
+    // ★★★ 自动排序：按时间由近到远 ★★★
+    appData.targets.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     appData.targets.forEach((t) => {
         const diff = Math.ceil((new Date(t.date) - new Date()) / 86400000); const urgentClass = (diff <= 7 && diff >= 0) ? 'urgent' : ''; const dayText = diff >= 0 ? `${diff} 天` : '已结束';
         list.innerHTML += `<div class="cd-row"> <span class="cd-name">${escapeHtml(t.name)}</span> <span class="cd-days ${urgentClass}">${dayText}</span> </div>`;

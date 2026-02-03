@@ -61,7 +61,7 @@ body.dark .card { border-color: var(--border); }
 .theme-dots { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
 .dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
 
-/* 导航按钮组：改为2列布局，适应长文本 */
+/* 导航按钮组：2列布局 */
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
 .btn-link { background: var(--border); border: none; padding: 10px; font-size: 0.8rem; cursor: pointer; border-radius: 6px; color: var(--text-main); text-align: center; font-weight: bold; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .btn-link:hover { background: var(--primary); color: white; transform: translateY(-2px); }
