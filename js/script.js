@@ -1,11 +1,10 @@
-// 全局错误捕获 (防止报错卡死)
+// 全局错误捕获
 window.onerror = function(msg, url, line) {
     console.error("Sys Error:", msg);
     return false;
 };
 
-// ★★★ 全新干净的 KEY，确保不报错 ★★★
-const DB_KEY = "algo_v12_clean"; 
+const DB_KEY = "algo_v7_cow"; 
 
 // --- 配置区 ---
 const RATINGS = {
@@ -30,13 +29,33 @@ const QUOTES = [
     {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
 ];
 
-// 数据默认值
+const BADGES = [
+    { id: "b1", icon: "🌱", title: "初出茅庐", check: (d) => d.logs.length >= 1 },
+    { id: "b2", icon: "🔥", title: "持之以恒", check: (d) => getStreak(d) >= 3 },
+    { id: "b3", icon: "🦁", title: "毅力帝", check: (d) => getStreak(d) >= 7 },
+    { id: "b4", icon: "⚡", title: "肝帝", check: (d) => getTodayCount(d) >= 5 },
+    { id: "b5", icon: "⚔️", title: "挑战者", check: (d) => d.maxRating >= 1600 },
+    { id: "b6", icon: "👑", title: "大师", check: (d) => d.maxRating >= 1900 },
+    { id: "b7", icon: "👽", title: "传说", check: (d) => d.maxRating >= 2100 },
+    { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
+];
+
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [] };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
 let timerInterval = null;
 let quoteIdx = 0;
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
 let pendingDeleteAction = null; 
+
+// --- 安全 DOM 操作助手 ---
+function setContent(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+}
+function setStyle(id, prop, val) {
+    const el = document.getElementById(id);
+    if (el) el.style[prop] = val;
+}
 
 // --- 初始化 ---
 window.onload = () => {
@@ -55,12 +74,14 @@ window.onload = () => {
         checkDailySettlement();
         renderUI();
         
-        // 实时时间
         setInterval(() => {
             const now = new Date();
-            const timeStr = now.toISOString().split('T')[0] + " " + now.toTimeString().substring(0, 5);
-            const el = document.getElementById('currentDateDisplay');
-            if(el) el.innerText = timeStr;
+            const timeStr = now.getFullYear() + "-" + 
+                String(now.getMonth()+1).padStart(2,'0') + "-" + 
+                String(now.getDate()).padStart(2,'0') + " " + 
+                String(now.getHours()).padStart(2,'0') + ":" + 
+                String(now.getMinutes()).padStart(2,'0');
+            setContent('currentDateDisplay', timeStr);
         }, 1000);
 
         setInterval(checkDailySettlement, 60000); 
@@ -74,7 +95,6 @@ window.onload = () => {
             updateTimerDisplay(timerState.totalTime);
         }
 
-        // 删除确认绑定
         const delBtn = document.getElementById('confirmDeleteBtn');
         if(delBtn) {
             delBtn.onclick = () => {
@@ -86,10 +106,9 @@ window.onload = () => {
     } catch(e) { console.error("Init Error:", e); }
 };
 
-// --- 核心时间 ---
+// --- 时间逻辑 ---
 function getRealDate() {
     const now = new Date();
-    // 简单处理时区，直接取 YYYY-MM-DD
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
@@ -99,7 +118,7 @@ function getRealDate() {
 function getTaskTargetDate() {
     const now = new Date();
     const limit = new Date();
-    limit.setHours(23, 30, 0, 0); 
+    limit.setHours(23, 30, 0, 0);
 
     if (now > limit) {
         const tomorrow = new Date(now);
@@ -113,7 +132,7 @@ function getTaskTargetDate() {
     }
 }
 
-// --- 结算 ---
+// --- 每日结算 ---
 function checkDailySettlement() {
     const today = getRealDate();
     const pastTodos = appData.todos.filter(t => t.date < today);
@@ -172,14 +191,21 @@ function addTodo() {
 
 function scrollToCommit(text, id) {
     const section = document.getElementById('submitSection');
-    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if(section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        section.classList.add('highlight-pulse');
+        setTimeout(() => section.classList.remove('highlight-pulse'), 1500);
+    }
     
-    section.classList.add('highlight-pulse');
-    setTimeout(() => section.classList.remove('highlight-pulse'), 1500);
+    const nameInput = document.getElementById('probName');
+    if(nameInput) {
+        nameInput.value = text || "";
+        nameInput.focus();
+    }
     
-    document.getElementById('probName').value = text || "";
-    document.getElementById('linkedTaskId').value = id; 
-    document.getElementById('probName').focus();
+    const hiddenId = document.getElementById('linkedTaskId');
+    if(hiddenId) hiddenId.value = id; 
+    
     showToast("AC后自动完成任务", "info");
 }
 
@@ -282,15 +308,19 @@ function processBatch() {
 
 // --- 渲染 ---
 function renderUI() {
-    document.getElementById('lvNum').innerText = appData.level;
-    document.getElementById('curXP').innerText = appData.xp;
+    setContent('lvNum', appData.level);
+    setContent('curXP', appData.xp);
+    
     const nextXP = 50 * Math.pow(appData.level, 2);
-    document.getElementById('nextXP').innerText = nextXP;
+    setContent('nextXP', nextXP);
+    
     const prevXP = 50 * Math.pow(appData.level - 1, 2);
     const pct = ((appData.xp - prevXP) / (nextXP - prevXP)) * 100;
-    document.getElementById('xpFill').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
-    document.getElementById('totalAC').innerText = appData.logs.length;
+    
+    setStyle('xpFill', 'width', `${Math.max(0, Math.min(pct, 100))}%`);
+    setContent('totalAC', appData.logs.length);
 
+    renderBadges();
     renderChart();
     renderTodos();
     renderHistory();
@@ -302,6 +332,7 @@ function renderUI() {
 function renderTodos() {
     const todayStr = getRealDate();
     const list = document.getElementById('todoList');
+    if(!list) return;
     list.innerHTML = "";
     
     const activeTodos = appData.todos.filter(t => t.date >= todayStr);
@@ -310,10 +341,14 @@ function renderTodos() {
     const doneCount = todayOnly.filter(t => t.done).length;
     const progress = todayOnly.length ? Math.round((doneCount/todayOnly.length)*100) : 0;
     
-    document.getElementById('dailyProgress').style.width = `${progress}%`;
-    document.getElementById('progressText').innerText = `${progress}%`;
-    if(progress === 100 && todayOnly.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
-    else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
+    setStyle('dailyProgress', 'width', `${progress}%`);
+    setContent('progressText', `${progress}%`);
+    
+    const bar = document.getElementById('dailyProgress');
+    if(bar) {
+        if(progress === 100 && todayOnly.length > 0) bar.style.backgroundColor = "#10b981";
+        else bar.style.backgroundColor = currentTheme.p;
+    }
 
     if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日无任务</div>`;
     
@@ -338,6 +373,7 @@ function renderTodos() {
 
 function renderHistory() {
     const histList = document.getElementById('historyList');
+    if(!histList) return;
     histList.innerHTML = "";
     if(appData.history.length === 0) {
         histList.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无历史</div>`;
@@ -353,9 +389,12 @@ function renderHistory() {
 }
 
 function renderLogs() {
-    const searchText = document.getElementById('searchInput')?.value.toLowerCase() || "";
+    const searchInput = document.getElementById('searchInput');
+    const searchText = searchInput ? searchInput.value.toLowerCase() : "";
     const logBox = document.getElementById('logList');
+    if(!logBox) return;
     logBox.innerHTML = '';
+    
     const filteredLogs = appData.logs.filter(l => l.name.toLowerCase().includes(searchText));
     
     if(filteredLogs.length === 0 && !searchText) {
@@ -395,7 +434,8 @@ function renderCalendar() {
     grid.innerHTML = "";
     const now = new Date();
     const y = now.getFullYear(); const m = now.getMonth();
-    document.getElementById('calTitle').innerText = `${y}年 ${m+1}月`;
+    setContent('calTitle', `${y}年 ${m+1}月`);
+    
     const firstDay = new Date(y, m, 1).getDay();
     const daysInMonth = new Date(y, m+1, 0).getDate();
     
@@ -416,7 +456,7 @@ function renderCalendar() {
         if(new Date(dateStr) <= now && activeDays[dateStr]) streak++;
         else if(new Date(dateStr) < now && !activeDays[dateStr]) streak = 0;
     }
-    document.getElementById('streakDays').innerText = streak;
+    setContent('streakDays', streak);
 }
 
 function renderChart() {
@@ -443,19 +483,32 @@ function renderChart() {
     }
 }
 
+function renderBadges() {
+    const badgeBox = document.getElementById('badgeGrid');
+    if(!badgeBox) return;
+    badgeBox.innerHTML = '';
+    BADGES.forEach(b => {
+        const unlocked = b.check(appData);
+        badgeBox.innerHTML += `<div class="badge ${unlocked?'unlocked':''}" data-title="${b.title}">${b.icon}</div>`;
+    });
+}
+
 function renderCountdowns() {
-    const list = document.getElementById('countdownList');
-    if(!list) return;
-    list.innerHTML = "";
-    if (!appData.targets || appData.targets.length === 0) { 
-        list.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; 
+    const container = document.getElementById('countdownList');
+    if(!container) return;
+    container.innerHTML = "";
+    const targets = appData.targets || [];
+    if (targets.length === 0) { 
+        container.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; 
         return; 
     }
-    appData.targets.forEach((t) => {
-        const diff = Math.ceil((new Date(t.date) - new Date()) / 86400000);
+    targets.forEach((t, idx) => {
+        const targetDate = new Date(t.date);
+        const now = new Date();
+        const diff = Math.ceil((targetDate - now) / 86400000);
         const urgentClass = (diff <= 7 && diff >= 0) ? 'urgent' : '';
         const dayText = diff >= 0 ? `${diff} 天` : '已结束';
-        list.innerHTML += `
+        container.innerHTML += `
         <div class="cd-row">
             <span class="cd-name">${escapeHtml(t.name)}</span>
             <span class="cd-days ${urgentClass}">${dayText}</span>
@@ -465,6 +518,7 @@ function renderCountdowns() {
 
 function renderTargetList() {
     const list = document.getElementById('targetList');
+    if(!list) return;
     list.innerHTML = "";
     (appData.targets || []).forEach((t, idx) => {
         list.innerHTML += `
@@ -525,13 +579,17 @@ function addTarget() {
     if(!name || !date) return showToast("请填写完整信息", "error");
     if(!appData.targets) appData.targets = [];
     appData.targets.push({ name, date });
-    saveData(); renderTargetList(); renderCountdowns();
+    saveData();
+    renderTargetList();
+    renderCountdowns();
     document.getElementById('newTargetName').value = "";
 }
 
 function removeTarget(idx) {
     appData.targets.splice(idx, 1);
-    saveData(); renderTargetList(); renderCountdowns();
+    saveData();
+    renderTargetList();
+    renderCountdowns();
 }
 
 function toggleTheme() {
@@ -561,7 +619,8 @@ function updateQuote() {
     if(!elC) return;
     elC.style.opacity = 0; elA.style.opacity = 0;
     setTimeout(() => {
-        elC.innerText = q.t; elA.innerText = `—— ${q.a}`;
+        elC.innerText = q.t;
+        elA.innerText = `—— ${q.a}`;
         elC.style.opacity = 1; elA.style.opacity = 1;
     }, 300);
 }
@@ -668,7 +727,7 @@ function importData(input) {
     reader.onload = function(e) {
         try {
             const json = JSON.parse(e.target.result);
-            if(confirm("确定覆盖吗？")) {
+            if(confirm("确定要覆盖当前记录吗？")) {
                 appData = json;
                 saveData();
                 showToast("读档成功！", "success");
