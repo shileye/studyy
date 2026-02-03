@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻</title>
+    <title>ICPC 2026 // 决战时刻 PRO</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,28 +16,29 @@
 
 <div class="modal" id="targetModal">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>📅 赛季日程管理</h3>
+        <h3>📅 赛季作战地图</h3>
         <div id="targetList" class="list-scroll"></div>
         <div class="input-row">
-            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 省赛)" style="flex:2">
+            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 区域赛)" style="flex:2">
             <input type="date" id="newTargetDate" style="flex:1.5">
-            <button class="btn btn-primary" onclick="addTarget()">添加</button>
+            <button class="btn btn-primary" onclick="addTarget()">➕ 添加节点</button>
         </div>
-        <button class="btn btn-outline full-width" style="margin-top:10px;" onclick="closeModal('targetModal')">关闭</button>
+        <button class="btn btn-outline full-width" style="margin-top:10px;" onclick="closeModal('targetModal')">完成配置</button>
     </div>
 </div>
 
 <div class="modal" id="batchModal">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>⚡ 批量速记 (Batch Import)</h3>
+        <h3>⚡ 极速入库 (Batch Import)</h3>
         <p class="hint-text">
-            格式：<b>[分数/颜色] 题目名</b><br>
-            示例：<code>1200 A. Math Problem</code> 或 <code>绿 P1024 线性代数</code>
+            格式：<b>[难度] 题目名</b><br>
+            <code>1600 C. The Legend</code><br>
+            <code>蓝 P3372 线段树</code>
         </p>
-        <textarea id="batchInput" class="batch-textarea" rows="8" placeholder="在这里粘贴内容..."></textarea>
+        <textarea id="batchInput" class="batch-textarea" rows="8" placeholder="在这里粘贴你的战果..."></textarea>
         <div class="input-row">
             <button class="btn btn-outline" onclick="closeModal('batchModal')" style="flex:1;">取消</button>
-            <button class="btn btn-primary" onclick="processBatch()" style="flex:1;">入库</button>
+            <button class="btn btn-primary" onclick="processBatch()" style="flex:1;">🚀 批量注入</button>
         </div>
     </div>
 </div>
@@ -48,8 +49,6 @@
             <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="100" cy="110" r="60" fill="#fff" stroke="#333" stroke-width="4"/>
                 <path d="M60,110 Q70,90 90,110 T110,130" fill="none" stroke="#333" stroke-width="0" fill-opacity="0.2"/>
-                <circle cx="70" cy="90" r="10" fill="#333"/>
-                <circle cx="130" cy="120" r="15" fill="#333"/>
                 <ellipse cx="40" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(-20 40 90)"/>
                 <ellipse cx="160" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(20 160 90)"/>
                 <path d="M60,70 Q50,40 70,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
@@ -61,8 +60,20 @@
                 <text x="165" y="155" font-size="15">👍</text>
             </svg>
         </div>
-        <div class="ac-text">AC！恭喜通过！</div>
-        <div class="ac-subtext">点击任意处关闭</div>
+        <div class="ac-text">AC Accepted!</div>
+        <div class="ac-subtext">太强了！继续保持！</div>
+    </div>
+</div>
+
+<div class="modal" id="confirmModal">
+    <div class="modal-card" style="text-align: center; max-width: 350px;">
+        <div style="font-size:3rem; margin-bottom:10px;">🗑️</div>
+        <h3 style="margin:0 0 10px 0;">确定要删除吗？</h3>
+        <p style="color:var(--text-light); font-size:0.9rem; margin-bottom:20px;">此操作无法撤销，这道题的记录将永久消失。</p>
+        <div class="input-row">
+            <button class="btn btn-outline" style="flex:1;" onclick="closeModal('confirmModal')">手滑了</button>
+            <button class="btn btn-danger" style="flex:1;" id="confirmDeleteBtn">确认删除</button>
+        </div>
     </div>
 </div>
 
@@ -77,28 +88,12 @@
 
     <aside class="sidebar">
         
-        <div class="card">
-            <div class="timer-header">
-                <span>⏱️ 今日专注</span>
-                <div id="timerStatus" class="tag offline">休息中</div>
+        <div class="card countdown-card clickable" onclick="openModal('targetModal')">
+            <div class="card-header-row">
+                <h4 class="card-title">🏆 赛季作战地图</h4>
+                <span class="edit-icon">⚙️</span>
             </div>
-            <div class="timer-display" id="totalTimeDisplay">00:00:00</div>
-            <button id="timerBtn" class="btn btn-primary full-width" onclick="toggleTimer()">🚀 开始专注 (Clock In)</button>
-        </div>
-
-        <div class="card calendar-card">
-            <div class="calendar-header" id="calTitle">Loading...</div>
-            <div class="calendar-weekdays">
-                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-            </div>
-            <div class="calendar-grid" id="calGrid"></div>
-            <div class="streak-info">🔥 连续打卡: <b id="streakDays" style="color:var(--accent)">0</b> 天</div>
-        </div>
-
-        <div class="card clickable" onclick="openModal('targetModal')" title="点击管理比赛日程">
-            <h4 class="card-title">📅 赛季日程 (Timeline)</h4>
-            <div id="countdownList"></div>
-            <div style="font-size:0.75rem; text-align:center; margin-top:5px; opacity:0.5;">(点击添加/管理)</div>
+            <div id="countdownList" class="countdown-list"></div>
         </div>
 
         <div class="card">
@@ -119,30 +114,42 @@
                 <div class="color-dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
             </div>
 
-            <div class="badge-grid" id="badgeGrid"></div>
-
-            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
-                <span style="margin-right:15px;">🏆 AC: <b id="totalAC">0</b></span>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <h4 style="margin:0 0 10px 0; text-align:center; opacity:0.7; font-size:0.85rem;">⚔️ 六维战力图</h4>
-                <div class="chart-box">
-                    <canvas id="radarChart"></canvas>
-                </div>
-            </div>
-
             <div class="action-grid">
-                <a href="https://codeforces.com/" target="_blank" class="btn-link">CF</a>
-                <a href="https://clist.by/" target="_blank" class="btn-link">Clist</a>
+                <a href="https://codeforces.com/problemset" target="_blank" class="btn-link">CF 题库</a>
+                <a href="https://www.luogu.com.cn/" target="_blank" class="btn-link">洛谷</a>
                 <button class="btn-link" onclick="openModal('batchModal')">⚡ 批量</button>
                 <button class="btn-link" onclick="exportData()">💾 备份</button>
                 <button class="btn-link" onclick="document.getElementById('fileInput').click()">📂 读档</button>
             </div>
         </div>
+
+        <div class="card">
+            <div class="timer-header">
+                <span>⏱️ 专注模式</span>
+                <div id="timerStatus" class="tag offline">OFF</div>
+            </div>
+            <div class="timer-display" id="totalTimeDisplay">00:00:00</div>
+            <button id="timerBtn" class="btn btn-primary full-width" onclick="toggleTimer()">🚀 开始专注 (Clock In)</button>
+        </div>
+
+        <div class="card calendar-card">
+            <div class="calendar-header" id="calTitle">Loading...</div>
+            <div class="calendar-weekdays">
+                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            </div>
+            <div class="calendar-grid" id="calGrid"></div>
+            <div class="streak-info">🔥 连续打卡: <b id="streakDays" style="color:var(--accent)">0</b> 天</div>
+        </div>
+
+        <div class="card">
+            <div class="chart-wrapper">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
     </aside>
 
     <main class="main-content">
+        
         <div class="card">
             <div class="section-header">
                 <h3 class="section-title">📜 今日计划 (To-Do)</h3>
@@ -157,26 +164,26 @@
             <div class="input-group">
                 <select id="todoType" style="flex:1;">
                     <option value="题">📖 刷题</option>
-                    <option value="赛">🏆 比赛</option>
-                    <option value="学">🧠 补题</option>
+                    <option value="赛">🏆 比赛/VP</option>
+                    <option value="学">🧠 补题/学习</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="输入任务 (23:30后自动记为明天)..." style="flex:4;">
+                <input type="text" id="todoInput" placeholder="输入任务 (点击 Go 去提交 AC)" style="flex:4;">
                 <button class="btn btn-primary" onclick="addTodo()">添加</button>
             </div>
             
             <div id="todoList" class="task-list"></div>
         </div>
 
-        <div class="card">
+        <div class="card commit-card" id="submitSection">
             <h3 class="section-title">⚔️ 提交代码 (Commit)</h3>
             <div class="input-grid">
                 <select id="ratingSelect">
                     <option disabled selected>--- CF Rating ---</option>
-                    <option value="1200">Newbie (1200)</option>
-                    <option value="1500">Pupil (1500)</option>
-                    <option value="1750">Specialist (1750)</option>
-                    <option value="2000">Expert (2000)</option>
-                    <option value="2200">Master (2200)</option>
+                    <option value="1200">Newbie (1200+)</option>
+                    <option value="1500">Pupil (1400+)</option>
+                    <option value="1750">Specialist (1600+)</option>
+                    <option value="2000">Expert (1900+)</option>
+                    <option value="2200">Master (2100+)</option>
                     <option disabled>--- 洛谷 ---</option>
                     <option value="luogu_red">🔴 入门</option>
                     <option value="luogu_orange">🟠 普及-</option>
@@ -190,10 +197,11 @@
                 <input type="text" id="probName" placeholder="题目名称">
             </div>
             <div class="input-grid" style="margin-top:10px;">
-                <input type="text" id="probLink" placeholder="原题链接">
-                <input type="text" id="solLink" placeholder="我的代码/博客链接">
+                <input type="text" id="probLink" placeholder="🔗 原题链接 (可选)">
+                <input type="text" id="solLink" placeholder="📝 我的代码/题解链接 (可选)">
             </div>
-            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC</button>
+            <input type="hidden" id="linkedTaskId" value="">
+            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC (并完成对应任务)</button>
         </div>
 
         <div class="card">
@@ -210,7 +218,7 @@
         </div>
     </main>
 
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会。</div>
+    <div class="footer-msg">种一棵树最好的时间是十年前，其次是现在。</div>
 </div>
 
 <script src="js/script.js"></script>

@@ -1,10 +1,10 @@
-// 全局错误捕获 (防止报错卡死无反馈)
+// 全局错误捕获
 window.onerror = function(msg, url, line) {
     console.error("Sys Error:", msg);
     return false;
 };
 
-// ★★★ 关键：改回老 Key，找回你的旧数据 ★★★
+// ★★★ 恢复数据 Key ★★★
 const DB_KEY = "algo_v7_cow"; 
 
 // --- 配置区 ---
@@ -27,7 +27,8 @@ const QUOTES = [
     {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
     {t:"Talk is cheap. Show me the code.", a:"Linus"},
     {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
-    {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
+    {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"},
+    {t:"种一棵树最好的时间是十年前，其次是现在。", a:"Dambisa Moyo"}
 ];
 
 const BADGES = [
@@ -41,21 +42,16 @@ const BADGES = [
     { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
 ];
 
-// 数据结构默认值
-let appData = { 
-    xp: 0, level: 1, maxRating: 0, 
-    todos: [], logs: [], targets: [], 
-    history: [] 
-};
+let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [] };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
 let timerInterval = null;
 let quoteIdx = 0;
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
+let pendingDeleteAction = null; // 用于存储待执行的删除操作
 
 // --- 初始化 ---
 window.onload = () => {
     try {
-        // 1. 恢复主题
         if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
         try {
             const savedColors = localStorage.getItem('themeColors');
@@ -65,20 +61,14 @@ window.onload = () => {
             }
         } catch(e) {}
 
-        // 2. 加载数据
         loadData();
         loadTimer();
-        
-        // 3. 检查是否需要结算昨天
-        checkDailySettlement(); 
-        
-        // 4. 渲染界面
+        checkDailySettlement();
         renderUI();
         
-        // 5. 启动实时时钟
+        // 实时时钟
         setInterval(() => {
             const now = new Date();
-            // 格式化为: 2026-02-04 00:45
             const timeStr = now.getFullYear() + "-" + 
                 String(now.getMonth()+1).padStart(2,'0') + "-" + 
                 String(now.getDate()).padStart(2,'0') + " " + 
@@ -88,24 +78,27 @@ window.onload = () => {
             if(el) el.innerText = timeStr;
         }, 1000);
 
-        // 6. 定时任务
         setInterval(checkDailySettlement, 60000); 
         updateQuote();
         setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000);
 
-        // 7. 恢复计时器状态
         if(timerState.isRunning) {
             startTimerTicker();
             updateTimerUI(true);
         } else {
             updateTimerDisplay(timerState.totalTime);
         }
+
+        // 绑定删除弹窗的确认按钮
+        document.getElementById('confirmDeleteBtn').onclick = () => {
+            if (pendingDeleteAction) pendingDeleteAction();
+            closeModal('confirmModal');
+        };
+
     } catch(e) { console.error("Init Error:", e); }
 };
 
-// --- 核心时间逻辑 ---
-
-// 获取当前物理日期 (YYYY-MM-DD)
+// --- 时间核心 ---
 function getRealDate() {
     const now = new Date();
     const year = now.getFullYear();
@@ -114,14 +107,12 @@ function getRealDate() {
     return `${year}-${month}-${day}`;
 }
 
-// 获取任务归属日期 (23:30 分界线)
 function getTaskTargetDate() {
     const now = new Date();
     const limit = new Date();
-    limit.setHours(23, 30, 0, 0); // 今天的 23:30
+    limit.setHours(23, 30, 0, 0); // 23:30 自动分界
 
     if (now > limit) {
-        // 超过23:30，归入明天
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const y = tomorrow.getFullYear();
@@ -133,26 +124,9 @@ function getTaskTargetDate() {
     }
 }
 
-// --- 每日结算逻辑 ---
+// --- 每日结算 ---
 function checkDailySettlement() {
     const today = getRealDate();
-    const now = new Date();
-    
-    // 如果还没到今天的 23:30，我们只结算“昨天及以前”的任务
-    // 如果已经过了今天的 23:30，我们要结算“今天”的任务
-    
-    let settlementDeadline = getRealDate();
-    const limit = new Date();
-    limit.setHours(23, 30, 0, 0);
-    
-    // 如果现在已经很晚了(>23:30)，那么今天的任务也该结算了
-    // 否则，只结算昨天以前的
-    const cutoffDate = (now > limit) ? today : today; // 这里简化逻辑：只要日期小于今天的，或者日期等于今天但时间过了23:30
-
-    // 找出所有需要归档的任务 (日期 < 今天)
-    // 注意：如果是今天23:30以后，其实逻辑上今天已经结束，但为了防止瞬间消失，
-    // 我们策略是：每次加载页面时，把“物理日期”小于今天的任务归档。
-    
     const pastTodos = appData.todos.filter(t => t.date < today);
     
     if (pastTodos.length > 0) {
@@ -163,9 +137,7 @@ function checkDailySettlement() {
             if(t.done) groups[t.date].done++;
         });
 
-        // 存入历史
         for(let date in groups) {
-            // 防止重复存入同一天
             if (!appData.history.find(h => h.date === date)) {
                 const rec = groups[date];
                 const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100);
@@ -173,15 +145,14 @@ function checkDailySettlement() {
             }
         }
         
-        // 从当前列表移除已结算任务
         appData.todos = appData.todos.filter(t => t.date >= today);
         saveData();
         renderUI(); 
-        showToast("📅 已自动结算昨日任务", "info");
+        showToast("📅 昨日任务已结算入库", "info");
     }
 }
 
-// --- 业务功能 ---
+// --- 任务联动核心逻辑 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
@@ -198,7 +169,7 @@ function addTodo() {
     appData.todos.push({
         id: Date.now(),
         text: `${displayPrefix}${icon} ${text}`,
-        rawText: text,
+        rawText: text, // 保留原始文本方便填充
         date: targetDate,
         done: false,
         type: type
@@ -208,28 +179,57 @@ function addTodo() {
     saveData();
     
     if(isTomorrow) {
-        showToast("已加入明日计划 (23:30后自动归为明天)", "success");
+        showToast("已加入明日计划 (23:30后算明天)", "success");
     }
+}
+
+// ★★★ 联动跳转：点击任务 -> 填充提交区 ★★★
+function scrollToCommit(text, id) {
+    // 去掉前缀图标和标记，只保留题目名
+    const cleanText = text.replace(/^(\[明日\] )?([📖🏆🧠] )?/, '');
+    
+    document.getElementById('probName').value = cleanText;
+    document.getElementById('linkedTaskId').value = id; // 记住这个任务ID
+    
+    // 滚动并高亮
+    const section = document.getElementById('submitSection');
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    section.classList.add('highlight-pulse');
+    setTimeout(() => section.classList.remove('highlight-pulse'), 2000);
+    
+    document.getElementById('probName').focus();
+    showToast("已准备提交，AC后自动完成任务", "info");
 }
 
 function submitAC() {
     const name = document.getElementById('probName').value;
     const rVal = document.getElementById('ratingSelect').value;
+    const probLink = document.getElementById('probLink').value;
+    const solLink = document.getElementById('solLink').value;
+    const linkedId = document.getElementById('linkedTaskId').value;
+
     if(!name || !rVal) return showToast("请填写完整信息", "error");
 
     const conf = RATINGS[rVal];
     if(parseInt(rVal)) appData.maxRating = Math.max(appData.maxRating, parseInt(rVal));
 
-    // 自动勾选同名任务
-    const match = appData.todos.find(t => t.text.includes(name) && !t.done);
-    if(match) match.done = true;
+    // 1. 尝试完成联动任务
+    if (linkedId) {
+        const linkedTask = appData.todos.find(t => t.id == linkedId);
+        if (linkedTask) linkedTask.done = true;
+    } 
+    // 2. 备用逻辑：如果是手动输入的，尝试匹配同名任务
+    else {
+        const match = appData.todos.find(t => t.text.includes(name) && !t.done);
+        if(match) match.done = true;
+    }
 
     appData.logs.unshift({
         id: Date.now(),
-        date: getRealDate(), // AC 记录永远算当天的战果
+        date: getRealDate(),
         name, ratingVal: rVal,
-        link: document.getElementById('probLink').value,
-        sol: document.getElementById('solLink').value,
+        link: probLink,
+        sol: solLink,
         xp: conf.xp
     });
     appData.xp += conf.xp;
@@ -237,7 +237,12 @@ function submitAC() {
     const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
     if(nextLv > appData.level) { appData.level = nextLv; showToast(`🎉 升级啦 LV.${nextLv}`, "success"); }
 
+    // 清理表单
     document.getElementById('probName').value = '';
+    document.getElementById('probLink').value = '';
+    document.getElementById('solLink').value = '';
+    document.getElementById('linkedTaskId').value = ''; // 清除联动状态
+    
     saveData();
     openModal('acModal');
     fireConfetti();
@@ -255,8 +260,7 @@ function processBatch() {
         if (!line) continue;
         
         let match = line.match(/^(\d+)\s+(.+)$/);
-        let validKey = "1200"; 
-        let name = "";
+        let validKey = "1200"; let name = "";
 
         if (match) {
             const num = parseInt(match[1]);
@@ -319,15 +323,12 @@ function renderUI() {
 }
 
 function renderTodos() {
-    // 列表里只显示“今天”和“明天（预设）”的任务
     const todayStr = getRealDate();
     const list = document.getElementById('todoList');
     list.innerHTML = "";
     
-    // 过滤出 >= 今天的任务
     const activeTodos = appData.todos.filter(t => t.date >= todayStr);
     
-    // 计算今日进度 (只算 date == today 的)
     const todayOnlyTodos = appData.todos.filter(t => t.date === todayStr);
     const doneCount = todayOnlyTodos.filter(t => t.done).length;
     const progress = todayOnlyTodos.length ? Math.round((doneCount/todayOnlyTodos.length)*100) : 0;
@@ -339,7 +340,6 @@ function renderTodos() {
 
     if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日任务已清空 / 尚未添加</div>`;
     
-    // 排序：先按日期(今天在前)，再按完成状态(未完成在前)
     activeTodos.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.done - b.done;
@@ -349,7 +349,8 @@ function renderTodos() {
         list.innerHTML += `
         <div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}">
             <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div>
-            <span class="btn-del" onclick="deleteTodo(${t.id})">✕</span>
+            ${!t.done ? `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀 去 AC</button>` : ''}
+            <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span>
         </div>`;
     });
 }
@@ -386,6 +387,11 @@ function renderLogs() {
         const div = document.createElement('div');
         div.className = 'log-card';
         div.style.borderLeftColor = conf.color;
+        
+        let links = '';
+        if(l.link) links += `<a href="${escapeHtml(l.link)}" target="_blank" class="link-btn link-prob">📄 原题</a>`;
+        if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 题解/代码</a>`;
+
         div.innerHTML = `
             <div style="flex:1">
                 <div style="font-weight:bold;display:flex;align-items:center;flex-wrap:wrap;">
@@ -393,10 +399,9 @@ function renderLogs() {
                 </div>
                 <div style="font-size:0.8rem;color:var(--text-light);margin-top:5px;">${l.date} · +${l.xp} XP</div>
             </div>
-            <div class="link-group" style="display:flex;align-items:center;">
-                ${l.link ? `<a href="${escapeHtml(l.link)}" target="_blank" class="link-prob">原题</a>` : ''}
-                ${l.sol ? `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-sol">代码</a>` : ''}
-                <div class="btn-del" onclick="deleteLog(${l.id})" title="删除记录">✕</div>
+            <div style="display:flex;align-items:center;">
+                ${links}
+                <div class="btn-del" onclick="requestDelete('log', ${l.id})">✕</div>
             </div>
         `;
         logBox.appendChild(div);
@@ -501,21 +506,29 @@ function renderTargetList() {
     });
 }
 
-// --- 辅助工具 (完整版) ---
+// --- 辅助工具 (弹窗、删除、主题等) ---
 
 function openModal(id) {
     const el = document.getElementById(id);
     if(el) {
         el.classList.add('show');
         if(id === 'targetModal') renderTargetList();
-    } else {
-        console.error("弹窗ID不存在:", id);
     }
 }
 
 function closeModal(id) {
     const el = document.getElementById(id);
     if(el) el.classList.remove('show');
+}
+
+// 优雅删除：请求删除 -> 弹出确认框
+function requestDelete(type, id) {
+    // 存储这个操作，等弹窗确认后再执行
+    pendingDeleteAction = () => {
+        if(type === 'todo') deleteTodo(id);
+        if(type === 'log') deleteLog(id);
+    };
+    openModal('confirmModal');
 }
 
 function toggleTodo(id) {
@@ -527,20 +540,18 @@ function toggleTodo(id) {
 }
 
 function deleteTodo(id) {
-    if(confirm("确定删除这个任务吗？")) {
-        appData.todos = appData.todos.filter(t => t.id !== id);
-        saveData();
-    }
+    appData.todos = appData.todos.filter(t => t.id !== id);
+    saveData();
+    showToast("任务已删除", "success");
 }
 
 function deleteLog(id) {
-    if(confirm("确定删除这条记录吗？")) {
-        const idx = appData.logs.findIndex(l => l.id === id);
-        if(idx !== -1) {
-            appData.xp = Math.max(0, appData.xp - appData.logs[idx].xp);
-            appData.logs.splice(idx, 1);
-            saveData();
-        }
+    const idx = appData.logs.findIndex(l => l.id === id);
+    if(idx !== -1) {
+        appData.xp = Math.max(0, appData.xp - appData.logs[idx].xp);
+        appData.logs.splice(idx, 1);
+        saveData();
+        showToast("记录已删除", "success");
     }
 }
 
@@ -636,6 +647,7 @@ function saveTimer() { localStorage.setItem('studyTimer', JSON.stringify(timerSt
 
 function toggleTimer() {
     if (timerState.isRunning) {
+        // 停止
         timerState.totalTime += Date.now() - timerState.startTime;
         timerState.isRunning = false;
         clearInterval(timerInterval);
@@ -643,6 +655,7 @@ function toggleTimer() {
         updateTimerUI(false);
         updateTimerDisplay(timerState.totalTime);
     } else {
+        // 开始
         timerState.startTime = Date.now();
         timerState.isRunning = true;
         saveTimer();
@@ -712,12 +725,6 @@ function importData(input) {
         input.value = '';
     };
     reader.readAsText(file);
-}
-
-function setPendingTodo(text) {
-    document.getElementById('probName').value = text;
-    document.getElementById('submitZone').scrollIntoView({ behavior: 'smooth' });
-    document.getElementById('probName').focus();
 }
 
 function generateAIPrompt() {
