@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 V13</title>
+    <title>ICPC 2026 // 决战时刻 V14</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,7 +15,7 @@
 
 <div class="modal" id="targetModal">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>📅 赛事时间表管理 (自动排序)</h3>
+        <h3>📅 赛事时间表管理</h3>
         <div id="targetList" class="list-scroll"></div>
         <div class="input-row">
             <input type="text" id="newTargetName" placeholder="赛事名称" style="flex:2">
@@ -88,6 +88,14 @@
             <div id="countdownList"></div>
         </div>
 
+        <div class="card gacha-card clickable" onclick="drawFortune()">
+            <div style="text-align:center;">
+                <div style="font-size:2rem; margin-bottom:5px;">🔮</div>
+                <h4 style="margin:0;">每日运势 (点击抽取)</h4>
+                <div id="fortuneResult" style="margin-top:10px; font-weight:bold; color:var(--primary); min-height:1.2em;">???</div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="timer-header">
                 <span>⏱️ 专注模式</span>
@@ -106,7 +114,6 @@
                 <div class="xp-text"><span>LV.<span id="lvNum">1</span></span><span><span id="curXP">0</span> / <span id="nextXP">100</span></span></div>
                 <div class="xp-track"><div class="xp-bar" id="xpFill"></div></div>
             </div>
-            
             <div class="theme-dots">
                 <div class="dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
                 <div class="dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
@@ -114,7 +121,6 @@
                 <div class="dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
                 <div class="dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
             </div>
-
             <div class="action-grid">
                 <a href="https://ac.nowcoder.com/acm/contest/vip-index" target="_blank" class="btn-link">🐮 牛客</a>
                 <a href="https://codeforces.com/contests" target="_blank" class="btn-link">🟦 CF</a>
@@ -134,10 +140,6 @@
             <div class="calendar-grid" id="calGrid"></div>
             <div class="streak-info">🔥 连续打卡: <b id="streakDays" style="color:var(--accent)">0</b> 天</div>
         </div>
-
-        <div class="card">
-            <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
-        </div>
     </aside>
 
     <main class="main-content">
@@ -156,13 +158,15 @@
                     <option value="赛">🏆 比赛/VP</option>
                     <option value="学">🧠 补题</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="输入任务 (点击 Go 去提交 AC)" style="flex:4;">
+                <input type="text" id="todoInput" placeholder="输入任务..." style="flex:4;">
                 <button class="btn btn-primary" onclick="addTodo()">添加</button>
             </div>
             <div id="todoList" class="task-list"></div>
+            
+            <button class="btn btn-outline full-width" style="margin-top:10px; border-style:dashed;" onclick="toggleCommitArea()">🖊️ 打开/关闭 提交代码区</button>
         </div>
 
-        <div class="card commit-card" id="submitSection">
+        <div class="card commit-card" id="submitSection" style="display:none;">
             <h3 class="section-title">⚔️ 提交代码 (Commit)</h3>
             <div class="input-grid">
                 <select id="ratingSelect">
@@ -185,19 +189,24 @@
                 <input type="text" id="probName" placeholder="题目名称">
             </div>
             <div class="input-grid" style="margin-top:10px;">
-                <input type="text" id="probLink" placeholder="🔗 原题链接 (可选)">
-                <input type="text" id="solLink" placeholder="📝 题解/代码链接 (可选)">
+                <input type="text" id="probLink" placeholder="🔗 原题链接">
+                <input type="text" id="solLink" placeholder="📝 题解链接">
             </div>
             <input type="hidden" id="linkedTaskId" value="">
             <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC</button>
         </div>
 
-        <div class="card">
-            <h3 class="section-title">📚 历史结算 (History)</h3>
-            <div id="historyList" class="history-list"></div>
+        <div class="stats-grid">
+            <div class="card" style="margin-bottom:0;">
+                <h3 class="section-title">📚 历史结算</h3>
+                <div id="historyList" class="history-list"></div>
+            </div>
+            <div class="card" style="margin-bottom:0; display:flex; align-items:center; justify-content:center;">
+                <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
+            </div>
         </div>
 
-        <div class="log-section">
+        <div class="log-section" style="margin-top:20px;">
             <div class="section-header">
                 <h3 class="section-title">🗓️ 刷题轨迹</h3>
                 <input type="text" id="searchInput" placeholder="🔍 搜索..." oninput="renderUI()" class="search-input">
@@ -206,7 +215,7 @@
         </div>
     </main>
 
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会</div>
+    <div class="footer-msg">你要考虑这是不是你此生仅有的机会。</div>
 </div>
 
 <script src="js/script.js"></script>
