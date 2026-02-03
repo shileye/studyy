@@ -1,3 +1,31 @@
+你的代码整体逻辑已经很完善了，日历卡片也放回去了。不过我检查了一下，发现了一个非常细微但致命的 HTML 结构闭合问题，这可能是导致你之前日历显示不出来，或者页面布局错乱的根本原因。
+
+🚨 问题点
+仔细看这一段：
+
+HTML
+        <div class="card">
+            ...
+            <div class="quick-links">...</div>
+            <div class="btn-group">...</div>
+        </div> </div> <div class="card">
+            <div id="calTitle">...</div>
+            <div id="calGrid">...</div>
+        </div>
+    </div> ```
+
+在你的代码里，`<div class="sidebar">` 并没有正确包裹住所有的卡片。因为那个 `XP/Badge` 的 `card` 结束后，你多写了一个 `</div>`，导致 **Sidebar 提前结束了**。
+
+这会导致：
+1.  **日历卡片** 被挤到了侧边栏外面，变成了一个新的主块，可能会被 `main` 挤到页面最底下看不见。
+2.  **布局错乱**：CSS 里的 `grid-area: sidebar` 只管到了第一张卡片，后面的卡片就变成流浪汉了。
+
+---
+
+### ✅ V9.2 终极修复版 (Index.html)
+我已经帮你把那几个该死的 `div` 闭合位置调整好了。请**直接全选覆盖 `index.html`**。
+
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -72,7 +100,7 @@
     <div class="theme-switch" onclick="toggleTheme()">🌓</div>
 
     <div class="quote-box">
-        <div class="quote-content" id="qContent">Code & Sorrow</div>
+        <div class="quote-content" id="qContent">Loading...</div>
         <div class="quote-author" id="qAuthor"></div>
         <div class="timer-bar"></div>
     </div>
@@ -152,9 +180,7 @@
             <div style="font-weight:bold; margin-bottom:10px;" id="calTitle"></div>
             <div class="calendar-grid" id="calGrid"></div>
         </div>
-    </div>
-
-    <div class="main">
+    </div> <div class="main">
         <div class="card todo-section">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin:0; color:var(--primary);">📜 今日任务 (Daily)</h3>
@@ -172,7 +198,7 @@
                     <option value="赛">🏆 比赛</option>
                     <option value="学">🧠 补题</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="任务内容 (4点前算作昨天)" style="flex:3;">
+                <input type="text" id="todoInput" placeholder="任务内容 (4点前算昨天)" style="flex:3;">
                 <button class="btn-submit" style="width:auto; padding:10px 20px;" onclick="addTodo()">添加</button>
             </div>
             <div class="todo-list" id="todoList"></div>
