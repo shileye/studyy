@@ -4,10 +4,10 @@ window.onerror = function(msg, url, line) {
     return false;
 };
 
-// ★★★ 恢复数据 Key ★★★
+// ★★★ 数据密钥：已改回旧版，找回你的历史记录 ★★★
 const DB_KEY = "algo_v7_cow"; 
 
-// --- 配置区 ---
+// --- 基础配置 ---
 const RATINGS = {
     "1200": { color: "#9ca3af", label: "Newbie", xp: 10, group: 0 },
     "1500": { color: "#2dd4bf", label: "Pupil", xp: 25, group: 1 },
@@ -24,11 +24,10 @@ const RATINGS = {
 };
 
 const QUOTES = [
-    {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
     {t:"Talk is cheap. Show me the code.", a:"Linus"},
+    {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
     {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
-    {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"},
-    {t:"种一棵树最好的时间是十年前，其次是现在。", a:"Dambisa Moyo"}
+    {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
 ];
 
 const BADGES = [
@@ -38,16 +37,16 @@ const BADGES = [
     { id: "b4", icon: "⚡", title: "肝帝", check: (d) => getTodayCount(d) >= 5 },
     { id: "b5", icon: "⚔️", title: "挑战者", check: (d) => d.maxRating >= 1600 },
     { id: "b6", icon: "👑", title: "大师", check: (d) => d.maxRating >= 1900 },
-    { id: "b7", icon: "👽", title: "传说", check: (d) => d.maxRating >= 2100 },
     { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
 ];
 
+// 数据状态
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [] };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
 let timerInterval = null;
 let quoteIdx = 0;
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
-let pendingDeleteAction = null; // 用于存储待执行的删除操作
+let pendingDeleteAction = null; // 暂存删除操作
 
 // --- 初始化 ---
 window.onload = () => {
@@ -66,7 +65,7 @@ window.onload = () => {
         checkDailySettlement();
         renderUI();
         
-        // 实时时钟
+        // 实时时间显示
         setInterval(() => {
             const now = new Date();
             const timeStr = now.getFullYear() + "-" + 
@@ -89,30 +88,32 @@ window.onload = () => {
             updateTimerDisplay(timerState.totalTime);
         }
 
-        // 绑定删除弹窗的确认按钮
+        // 绑定删除弹窗确认按钮
         document.getElementById('confirmDeleteBtn').onclick = () => {
-            if (pendingDeleteAction) pendingDeleteAction();
+            if(pendingDeleteAction) pendingDeleteAction();
             closeModal('confirmModal');
         };
 
     } catch(e) { console.error("Init Error:", e); }
 };
 
-// --- 时间核心 ---
+// --- 时间逻辑 ---
 function getRealDate() {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
+// 23:30 分界线逻辑
 function getTaskTargetDate() {
     const now = new Date();
     const limit = new Date();
-    limit.setHours(23, 30, 0, 0); // 23:30 自动分界
+    limit.setHours(23, 30, 0, 0);
 
     if (now > limit) {
+        // 超过23:30，归入明天
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const y = tomorrow.getFullYear();
@@ -138,6 +139,7 @@ function checkDailySettlement() {
         });
 
         for(let date in groups) {
+            // 防止重复结算同一天
             if (!appData.history.find(h => h.date === date)) {
                 const rec = groups[date];
                 const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100);
@@ -145,6 +147,7 @@ function checkDailySettlement() {
             }
         }
         
+        // 移除已结算任务
         appData.todos = appData.todos.filter(t => t.date >= today);
         saveData();
         renderUI(); 
@@ -152,7 +155,7 @@ function checkDailySettlement() {
     }
 }
 
-// --- 任务联动核心逻辑 ---
+// --- 任务联动核心 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
@@ -169,7 +172,7 @@ function addTodo() {
     appData.todos.push({
         id: Date.now(),
         text: `${displayPrefix}${icon} ${text}`,
-        rawText: text, // 保留原始文本方便填充
+        rawText: text, // 保留纯文本用于自动填充
         date: targetDate,
         done: false,
         type: type
@@ -183,22 +186,23 @@ function addTodo() {
     }
 }
 
-// ★★★ 联动跳转：点击任务 -> 填充提交区 ★★★
+// ★ 任务 -> 提交区 跳转 ★
 function scrollToCommit(text, id) {
-    // 去掉前缀图标和标记，只保留题目名
-    const cleanText = text.replace(/^(\[明日\] )?([📖🏆🧠] )?/, '');
-    
-    document.getElementById('probName').value = cleanText;
-    document.getElementById('linkedTaskId').value = id; // 记住这个任务ID
-    
-    // 滚动并高亮
+    // 滚动
     const section = document.getElementById('submitSection');
     section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // 高亮
     section.classList.add('highlight-pulse');
-    setTimeout(() => section.classList.remove('highlight-pulse'), 2000);
+    setTimeout(() => section.classList.remove('highlight-pulse'), 1500);
+    
+    // 填充
+    const cleanText = text || "";
+    document.getElementById('probName').value = cleanText;
+    document.getElementById('linkedTaskId').value = id; // 记录关联ID
     
     document.getElementById('probName').focus();
-    showToast("已准备提交，AC后自动完成任务", "info");
+    showToast("已填充题目，AC后自动完成任务", "info");
 }
 
 function submitAC() {
@@ -213,13 +217,13 @@ function submitAC() {
     const conf = RATINGS[rVal];
     if(parseInt(rVal)) appData.maxRating = Math.max(appData.maxRating, parseInt(rVal));
 
-    // 1. 尝试完成联动任务
+    // ★ 联动结算逻辑 ★
     if (linkedId) {
-        const linkedTask = appData.todos.find(t => t.id == linkedId);
-        if (linkedTask) linkedTask.done = true;
-    } 
-    // 2. 备用逻辑：如果是手动输入的，尝试匹配同名任务
-    else {
+        // 如果有直接关联的任务ID，直接勾选
+        const task = appData.todos.find(t => t.id == linkedId);
+        if(task) task.done = true;
+    } else {
+        // 否则尝试模糊匹配
         const match = appData.todos.find(t => t.text.includes(name) && !t.done);
         if(match) match.done = true;
     }
@@ -237,11 +241,11 @@ function submitAC() {
     const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
     if(nextLv > appData.level) { appData.level = nextLv; showToast(`🎉 升级啦 LV.${nextLv}`, "success"); }
 
-    // 清理表单
+    // 重置表单
     document.getElementById('probName').value = '';
     document.getElementById('probLink').value = '';
     document.getElementById('solLink').value = '';
-    document.getElementById('linkedTaskId').value = ''; // 清除联动状态
+    document.getElementById('linkedTaskId').value = '';
     
     saveData();
     openModal('acModal');
@@ -302,7 +306,7 @@ function processBatch() {
     } else { showToast("格式错误", "error"); }
 }
 
-// --- 渲染逻辑 ---
+// --- 渲染 ---
 function renderUI() {
     document.getElementById('lvNum').innerText = appData.level;
     document.getElementById('curXP').innerText = appData.xp;
@@ -327,15 +331,17 @@ function renderTodos() {
     const list = document.getElementById('todoList');
     list.innerHTML = "";
     
+    // 显示今天及以后的任务
     const activeTodos = appData.todos.filter(t => t.date >= todayStr);
     
-    const todayOnlyTodos = appData.todos.filter(t => t.date === todayStr);
-    const doneCount = todayOnlyTodos.filter(t => t.done).length;
-    const progress = todayOnlyTodos.length ? Math.round((doneCount/todayOnlyTodos.length)*100) : 0;
+    // 计算今日完成率
+    const todayOnly = appData.todos.filter(t => t.date === todayStr);
+    const doneCount = todayOnly.filter(t => t.done).length;
+    const progress = todayOnly.length ? Math.round((doneCount/todayOnly.length)*100) : 0;
     
     document.getElementById('dailyProgress').style.width = `${progress}%`;
     document.getElementById('progressText').innerText = `${progress}%`;
-    if(progress === 100 && todayOnlyTodos.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
+    if(progress === 100 && todayOnly.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
     else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
 
     if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日任务已清空 / 尚未添加</div>`;
@@ -346,10 +352,15 @@ function renderTodos() {
     });
 
     activeTodos.forEach(t => {
+        // ★ 生成联动按钮 ★
+        const goBtn = !t.done ? 
+            `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀</button>` 
+            : '';
+
         list.innerHTML += `
         <div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}">
             <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div>
-            ${!t.done ? `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀 去 AC</button>` : ''}
+            ${goBtn}
             <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span>
         </div>`;
     });
@@ -388,9 +399,10 @@ function renderLogs() {
         div.className = 'log-card';
         div.style.borderLeftColor = conf.color;
         
+        // ★ 双链接渲染 ★
         let links = '';
         if(l.link) links += `<a href="${escapeHtml(l.link)}" target="_blank" class="link-btn link-prob">📄 原题</a>`;
-        if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 题解/代码</a>`;
+        if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 题解</a>`;
 
         div.innerHTML = `
             <div style="flex:1">
@@ -506,7 +518,7 @@ function renderTargetList() {
     });
 }
 
-// --- 辅助工具 (弹窗、删除、主题等) ---
+// --- 辅助工具 (无缺失版) ---
 
 function openModal(id) {
     const el = document.getElementById(id);
@@ -521,9 +533,8 @@ function closeModal(id) {
     if(el) el.classList.remove('show');
 }
 
-// 优雅删除：请求删除 -> 弹出确认框
+// 优雅删除：唤起确认弹窗
 function requestDelete(type, id) {
-    // 存储这个操作，等弹窗确认后再执行
     pendingDeleteAction = () => {
         if(type === 'todo') deleteTodo(id);
         if(type === 'log') deleteLog(id);
@@ -613,7 +624,6 @@ function loadData() {
         if (saved) {
             const parsed = JSON.parse(saved);
             appData = { ...appData, ...parsed };
-            // 兼容性检查
             if(!appData.targets) appData.targets = [];
             if(!appData.todos) appData.todos = [];
             if(!appData.logs) appData.logs = [];
@@ -647,7 +657,6 @@ function saveTimer() { localStorage.setItem('studyTimer', JSON.stringify(timerSt
 
 function toggleTimer() {
     if (timerState.isRunning) {
-        // 停止
         timerState.totalTime += Date.now() - timerState.startTime;
         timerState.isRunning = false;
         clearInterval(timerInterval);
@@ -655,7 +664,6 @@ function toggleTimer() {
         updateTimerUI(false);
         updateTimerDisplay(timerState.totalTime);
     } else {
-        // 开始
         timerState.startTime = Date.now();
         timerState.isRunning = true;
         saveTimer();
@@ -715,7 +723,7 @@ function importData(input) {
     reader.onload = function(e) {
         try {
             const json = JSON.parse(e.target.result);
-            if(confirm("确定要覆盖当前记录吗？此操作不可撤销。")) {
+            if(confirm("确定要覆盖当前记录吗？")) {
                 appData = json;
                 saveData();
                 showToast("读档成功！", "success");
@@ -725,23 +733,6 @@ function importData(input) {
         input.value = '';
     };
     reader.readAsText(file);
-}
-
-function generateAIPrompt() {
-    const today = getRealDate();
-    const logs = appData.logs.filter(l => l.date === today);
-    if (logs.length === 0) return showToast("今天没做题", "info");
-    const list = logs.map(l => `- ${l.name} (${RATINGS[l.ratingVal].label})`).join('\n');
-    const prompt = `我今天练习了算法，做了以下题目：\n${list}\n请帮我复盘今天的学习情况。`;
-    navigator.clipboard.writeText(prompt).then(() => showToast("AI 提示词已复制", "success"));
-}
-
-function copyReport() {
-    const today = getRealDate();
-    const logs = appData.logs.filter(l => l.date === today);
-    if(logs.length === 0) return showToast("今天无记录", "error");
-    const list = logs.map(l => `✅ [${RATINGS[l.ratingVal].label}] ${l.name}`).join('\n');
-    navigator.clipboard.writeText(`📅 ${today} 打卡\n${list}`).then(() => showToast("战报已复制", "success"));
 }
 
 function fireConfetti() {
