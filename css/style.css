@@ -34,11 +34,9 @@ body {
     position: relative;
 }
 
-/* 顶部开关 */
 .theme-switch { position: absolute; top: -30px; right: 0; cursor: pointer; font-size: 1.2rem; opacity: 0.7; }
 .theme-switch:hover { opacity: 1; transform: scale(1.1); }
 
-/* 语录 */
 .quote-box {
     grid-area: quote; background: var(--card); padding: 35px;
     border-radius: 12px; box-shadow: var(--shadow);
@@ -50,7 +48,6 @@ body {
 .timer-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary); width: 0%; animation: timeFlow 30s linear infinite; }
 @keyframes timeFlow { from {width: 0%} to {width: 100%} }
 
-/* 左侧 */
 .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 20px; }
 .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid transparent; }
 body.dark .card { border-color: var(--border); }
@@ -111,7 +108,6 @@ body.dark .card { border-color: var(--border); }
 .cal-cell.active { background: var(--primary); color: white; }
 .cal-cell.gold { background: var(--gold); color: white; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
 
-/* 主内容 */
 .main { grid-area: main; display: flex; flex-direction: column; gap: 20px; }
 
 .todo-section { border: 2px dashed var(--border); }
@@ -145,7 +141,6 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .link-prob { color: var(--text-light); } .link-prob:hover { text-decoration: underline; }
 .link-sol { color: var(--primary); font-weight: bold; } .link-sol:hover { text-decoration: underline; }
 
-/* 删除按钮 */
 .btn-del {
     cursor: pointer; color: #cbd5e1; font-size: 1.2rem; margin-left: 15px; font-weight: bold;
 }
@@ -157,7 +152,6 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     grid-column: 1 / -1;
 }
 
-/* 牛客风 AC 弹窗 */
 .ac-modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.7); z-index: 1000;
@@ -166,7 +160,6 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 }
 .ac-modal.show { display: flex; animation: fadeIn 0.3s; }
 
-/* 纯 CSS/SVG 画的小牛 */
 .ac-cow-container {
     width: 200px; height: 200px; position: relative;
     animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -185,7 +178,6 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* 彩带 */
 #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
 
 @media (max-width: 800px) {
@@ -193,7 +185,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     .row { flex-direction: column; }
 }
 
-/* --- Toast 通知系统 --- */
+/* --- Toast 通知 --- */
 .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
 .toast {
     background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 24px; border-radius: 50px;
@@ -206,7 +198,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 @keyframes slideDown { from {opacity:0; transform:translateY(-30px);} to {opacity:1; transform:translateY(0);} }
 @keyframes fadeOut { from {opacity:1;} to {opacity:0;} }
 
-/* --- 新增：雷达图容器 --- */
+/* --- 雷达图容器 --- */
 .chart-box {
     position: relative;
     height: 200px;

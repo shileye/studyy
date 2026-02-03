@@ -74,7 +74,7 @@ function getTodayCount(d) {
 function addTodo() {
     const val = document.getElementById('todoInput').value;
     if (!val) return;
-    // 使用 escapeHtml 处理输入，防止恶意代码
+    // 使用 escapeHtml 处理输入
     appData.todos.push({ id: Date.now(), text: val, date: new Date().toISOString().split('T')[0], done: false });
     document.getElementById('todoInput').value = '';
     saveData();
@@ -111,7 +111,7 @@ function setPendingTodo(text) {
 
 function submitAC() {
     const name = document.getElementById('probName').value;
-    // 【修改点】使用 showToast 替代 alert
+    // Toast 替代 Alert
     if (!name) return showToast("题目名称必填", "error");
     
     const rVal = document.getElementById('ratingSelect').value;
@@ -159,7 +159,6 @@ function generateAIPrompt() {
     const today = new Date().toISOString().split('T')[0];
     const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
     
-    // 【修改点】使用 showToast 替代 alert
     if (todayLogs.length === 0) return showToast("今天还没做题呢！", "info");
     
     const problemList = todayLogs.map(l => `- ${l.name} (${RATINGS[l.ratingVal].label})`).join('\n');
@@ -172,7 +171,6 @@ function copyReport() {
     const today = new Date().toISOString().split('T')[0];
     const todayLogs = appData.logs.filter(l => l.date.startsWith(today));
     
-    // 【修改点】使用 showToast 替代 alert
     if(todayLogs.length === 0) return showToast("今天无记录", "error");
     
     let stats = {};
@@ -209,15 +207,13 @@ function renderUI() {
     const stats = { "1200":0, "1500":0, "1750":0, "2000":0, "2200":0 };
     appData.logs.forEach(l => { if(stats[l.ratingVal]!==undefined) stats[l.ratingVal]++; });
     
-    // 【修改点】渲染雷达图 (Chart.js)
+    // ★★★ 核心：渲染雷达图 ★★★
     const ctx = document.getElementById('radarChart');
-    if (ctx && window.Chart) { // 确保元素存在且库已加载
+    if (ctx && window.Chart) {
         const levelData = [ stats["1200"], stats["1500"], stats["1750"], stats["2000"], stats["2200"] ];
         
-        // 销毁旧图表防止重叠
         if (window.myRadarChart) window.myRadarChart.destroy();
         
-        // 判断深色模式
         const isDark = document.body.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -251,14 +247,12 @@ function renderUI() {
         });
     }
 
-    // 保留文字版统计
     const statHTML = Object.keys(RATINGS).map(k => {
         if(stats[k]===0) return '';
         return `<div class="rs-row"><span style="display:flex;align-items:center"><div class="dot" style="background:${RATINGS[k].color}"></div>${RATINGS[k].label}</span><b>${stats[k]}</b></div>`;
     }).join('');
     document.getElementById('ratingStatsBox').innerHTML = statHTML;
 
-    // Logs 渲染
     const logBox = document.getElementById('logList');
     logBox.innerHTML = '';
     appData.logs.slice(0, 30).forEach(l => {
@@ -282,7 +276,6 @@ function renderUI() {
         logBox.appendChild(div);
     });
     
-    // Todos 渲染
     const todoBox = document.getElementById('todoList');
     todoBox.innerHTML = '';
     const today = new Date().toISOString().split('T')[0];
@@ -351,10 +344,8 @@ function fireConfetti() {
     animate();
 }
 
-// --- 工具：防止 XSS 攻击 (安全过滤) ---
 function escapeHtml(text) {
     if (!text) return text;
-    // 强制转为字符串以防万一
     return String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -363,7 +354,6 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-// --- Toast 逻辑 (气泡通知) ---
 function showToast(msg, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -379,7 +369,6 @@ function showToast(msg, type = 'info') {
     
     container.appendChild(el);
     
-    // 3秒后自动消失
     setTimeout(() => {
         el.style.animation = 'fadeOut 0.3s forwards';
         setTimeout(() => el.remove(), 300);
