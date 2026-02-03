@@ -12,6 +12,8 @@
 
 <canvas id="confetti-canvas"></canvas>
 
+<input type="file" id="fileInput" style="display: none;" onchange="importData(this)">
+
 <div class="ac-modal" id="acModal" onclick="closeAC()">
     <div class="ac-cow-container">
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -78,6 +80,14 @@
                 <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
             </div>
 
+            <div class="theme-selector">
+                <div class="color-dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')" title="默认紫"></div>
+                <div class="color-dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')" title="黑客绿"></div>
+                <div class="color-dot" style="background:#ef4444;" onclick="changeColor('#ef4444', '#facc15')" title="赤红"></div>
+                <div class="color-dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')" title="深海蓝"></div>
+                <div class="color-dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')" title="皇室金"></div>
+            </div>
+
             <div class="badge-grid" id="badgeGrid"></div>
 
             <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
@@ -103,9 +113,14 @@
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-ai" onclick="generateAIPrompt()">🤖 复制 AI 复盘提示词</button>
-                <button class="btn btn-share" onclick="copyReport()">📋 复制 PRO 战报</button>
+                <button class="btn btn-ai" onclick="generateAIPrompt()">🤖 AI 复盘</button>
+                <button class="btn btn-share" onclick="copyReport()">📋 复制战报</button>
                 <button class="btn" style="background:var(--text-main); grid-column: 1 / -1;" onclick="openBatchModal()">⚡ 批量速记模式</button>
+                
+                <div style="grid-column: 1 / -1; display:flex; gap:8px; margin-top:5px;">
+                    <button class="btn" style="flex:1; background:var(--border); color:var(--text-main); font-size:0.8rem;" onclick="exportData()">💾 备份</button>
+                    <button class="btn" style="flex:1; background:var(--border); color:var(--text-main); font-size:0.8rem;" onclick="document.getElementById('fileInput').click()">📂 读档</button>
+                </div>
             </div>
         </div>
 
@@ -144,7 +159,11 @@
             <button class="btn-submit" onclick="submitAC()">✅ 确认 AC</button>
         </div>
 
-        <h3 style="margin:0;">🗓️ 时光轨迹</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">🗓️ 时光轨迹</h3>
+            <input type="text" id="searchInput" placeholder="🔍 搜索历史题目..." oninput="renderUI()" style="width:180px; font-size:0.85rem; padding:6px 10px;">
+        </div>
+        
         <div class="log-list" id="logList"></div>
     </div>
 

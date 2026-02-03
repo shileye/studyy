@@ -31,21 +31,47 @@ const BADGES = [
 
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [] };
 let quoteIdx = 0;
+// 默认主题色
+let currentTheme = { p: '#4f46e5', a: '#db2777' };
 
 window.onload = () => {
+    // 恢复夜间模式
     if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    // 恢复自定义颜色
+    const savedColors = localStorage.getItem('themeColors');
+    if(savedColors) {
+        currentTheme = JSON.parse(savedColors);
+        applyTheme(currentTheme.p, currentTheme.a);
+    }
+
     loadData();
     renderUI();
     updateQuote();
     setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000);
 };
 
+// --- 主题切换逻辑 ---
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
     renderUI(); 
 }
 
+function changeColor(primary, accent) {
+    currentTheme = { p: primary, a: accent };
+    applyTheme(primary, accent);
+    localStorage.setItem('themeColors', JSON.stringify(currentTheme));
+    renderUI(); // 重绘图表以适配新颜色
+    showToast("主题色已切换！", "success");
+}
+
+function applyTheme(p, a) {
+    const root = document.documentElement;
+    root.style.setProperty('--primary', p);
+    root.style.setProperty('--accent', a);
+}
+
+// --- 数据逻辑 ---
 function updateQuote() {
     const q = QUOTES[quoteIdx];
     const elC = document.getElementById('qContent'), elA = document.getElementById('qAuthor');
@@ -57,12 +83,48 @@ function updateQuote() {
 function loadData() {
     const saved = localStorage.getItem(DB_KEY);
     if (saved) appData = JSON.parse(saved);
-    else {
-        const old = localStorage.getItem("algo_v6_badges");
-        if(old) appData = JSON.parse(old);
-    }
 }
 function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
+
+// --- 备份与恢复 (新增) ---
+function exportData() {
+    const dataStr = JSON.stringify(appData);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `algo_warrior_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("存档已导出！请妥善保存", "success");
+}
+
+function importData(input) {
+    const file = input.files[0];
+    if(!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const json = JSON.parse(e.target.result);
+            if(json.logs && json.xp !== undefined) {
+                if(confirm("确定要覆盖当前记录吗？这将无法撤销！")) {
+                    appData = json;
+                    saveData();
+                    showToast("读档成功！欢迎回来，勇士", "success");
+                }
+            } else {
+                showToast("存档文件格式错误", "error");
+            }
+        } catch(err) {
+            showToast("文件解析失败", "error");
+        }
+        input.value = ''; // 清空以允许重复上传同一文件
+    };
+    reader.readAsText(file);
+}
 
 function getStreak(d) { return parseInt(document.getElementById('streakDays')?.innerText || 0); }
 function getTodayCount(d) {
@@ -206,6 +268,9 @@ function renderUI() {
         const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
 
+        // 动态使用当前主题色
+        const themeColor = currentTheme.p;
+        
         window.myRadarChart = new Chart(ctx, {
             type: 'radar',
             data: {
@@ -213,9 +278,9 @@ function renderUI() {
                 datasets: [{
                     label: 'AC数量',
                     data: levelData,
-                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
-                    borderColor: '#4f46e5',
-                    pointBackgroundColor: '#db2777',
+                    backgroundColor: themeColor + '33', // 加透明度
+                    borderColor: themeColor,
+                    pointBackgroundColor: currentTheme.a,
                     pointBorderColor: '#fff',
                     borderWidth: 2
                 }]
@@ -241,9 +306,19 @@ function renderUI() {
     }).join('');
     document.getElementById('ratingStatsBox').innerHTML = statHTML;
 
+    // --- 搜索过滤逻辑 ---
+    const searchText = document.getElementById('searchInput')?.value.toLowerCase() || "";
     const logBox = document.getElementById('logList');
     logBox.innerHTML = '';
-    appData.logs.slice(0, 30).forEach(l => {
+    
+    // 过滤 + 限制显示数量
+    const filteredLogs = appData.logs.filter(l => l.name.toLowerCase().includes(searchText));
+    
+    if(filteredLogs.length === 0) {
+        logBox.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">空空如也 🍂</div>';
+    }
+
+    filteredLogs.slice(0, 30).forEach(l => {
         const conf = RATINGS[l.ratingVal];
         const div = document.createElement('div');
         div.className = 'log-card';
