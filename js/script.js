@@ -1,12 +1,11 @@
 // 全局错误捕获 (防止报错卡死无反馈)
 window.onerror = function(msg, url, line) {
-    console.error("系统报错:", msg);
-    // 屏蔽 resize 相关的无关紧要报错
-    if (msg.includes("ResizeObserver")) return true;
+    console.error("Sys Error:", msg);
     return false;
 };
 
-const DB_KEY = "algo_v10_pro"; 
+// ★★★ 关键：改回老 Key，找回你的旧数据 ★★★
+const DB_KEY = "algo_v7_cow"; 
 
 // --- 配置区 ---
 const RATINGS = {
@@ -25,8 +24,9 @@ const RATINGS = {
 };
 
 const QUOTES = [
-    {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"}, {t:"欲买桂花同载酒，终不似，少年游。", a:"刘过"},
-    {t:"Talk is cheap. Show me the code.", a:"Linus"}, {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
+    {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
+    {t:"Talk is cheap. Show me the code.", a:"Linus"},
+    {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
     {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
 ];
 
@@ -41,6 +41,7 @@ const BADGES = [
     { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
 ];
 
+// 数据结构默认值
 let appData = { 
     xp: 0, level: 1, maxRating: 0, 
     todos: [], logs: [], targets: [], 
@@ -54,6 +55,7 @@ let currentTheme = { p: '#4f46e5', a: '#db2777' };
 // --- 初始化 ---
 window.onload = () => {
     try {
+        // 1. 恢复主题
         if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
         try {
             const savedColors = localStorage.getItem('themeColors');
@@ -63,14 +65,17 @@ window.onload = () => {
             }
         } catch(e) {}
 
+        // 2. 加载数据
         loadData();
         loadTimer();
-        checkDailySettlement(); // 每日结算检查
         
-        // UI 渲染
+        // 3. 检查是否需要结算昨天
+        checkDailySettlement(); 
+        
+        // 4. 渲染界面
         renderUI();
         
-        // 实时时间显示
+        // 5. 启动实时时钟
         setInterval(() => {
             const now = new Date();
             // 格式化为: 2026-02-04 00:45
@@ -83,10 +88,12 @@ window.onload = () => {
             if(el) el.innerText = timeStr;
         }, 1000);
 
+        // 6. 定时任务
         setInterval(checkDailySettlement, 60000); 
         updateQuote();
         setInterval(() => { quoteIdx = (quoteIdx + 1) % QUOTES.length; updateQuote(); }, 30000);
 
+        // 7. 恢复计时器状态
         if(timerState.isRunning) {
             startTimerTicker();
             updateTimerUI(true);
@@ -97,10 +104,10 @@ window.onload = () => {
 };
 
 // --- 核心时间逻辑 ---
+
 // 获取当前物理日期 (YYYY-MM-DD)
 function getRealDate() {
     const now = new Date();
-    // 修正时区偏移，确保获取的是本地日期字符串
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -110,9 +117,8 @@ function getRealDate() {
 // 获取任务归属日期 (23:30 分界线)
 function getTaskTargetDate() {
     const now = new Date();
-    // 今天的 23:30
     const limit = new Date();
-    limit.setHours(23, 30, 0, 0);
+    limit.setHours(23, 30, 0, 0); // 今天的 23:30
 
     if (now > limit) {
         // 超过23:30，归入明天
@@ -130,11 +136,26 @@ function getTaskTargetDate() {
 // --- 每日结算逻辑 ---
 function checkDailySettlement() {
     const today = getRealDate();
-    // 找出所有日期早于今天的任务
+    const now = new Date();
+    
+    // 如果还没到今天的 23:30，我们只结算“昨天及以前”的任务
+    // 如果已经过了今天的 23:30，我们要结算“今天”的任务
+    
+    let settlementDeadline = getRealDate();
+    const limit = new Date();
+    limit.setHours(23, 30, 0, 0);
+    
+    // 如果现在已经很晚了(>23:30)，那么今天的任务也该结算了
+    // 否则，只结算昨天以前的
+    const cutoffDate = (now > limit) ? today : today; // 这里简化逻辑：只要日期小于今天的，或者日期等于今天但时间过了23:30
+
+    // 找出所有需要归档的任务 (日期 < 今天)
+    // 注意：如果是今天23:30以后，其实逻辑上今天已经结束，但为了防止瞬间消失，
+    // 我们策略是：每次加载页面时，把“物理日期”小于今天的任务归档。
+    
     const pastTodos = appData.todos.filter(t => t.date < today);
     
     if (pastTodos.length > 0) {
-        // 按日期分组结算
         const groups = {};
         pastTodos.forEach(t => {
             if(!groups[t.date]) groups[t.date] = { total:0, done:0 };
@@ -142,9 +163,9 @@ function checkDailySettlement() {
             if(t.done) groups[t.date].done++;
         });
 
-        // 存入历史，防止重复
+        // 存入历史
         for(let date in groups) {
-            // 检查历史里是否已经有这一天的结算
+            // 防止重复存入同一天
             if (!appData.history.find(h => h.date === date)) {
                 const rec = groups[date];
                 const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100);
@@ -152,7 +173,7 @@ function checkDailySettlement() {
             }
         }
         
-        // 从当前任务列表移除已结算的任务
+        // 从当前列表移除已结算任务
         appData.todos = appData.todos.filter(t => t.date >= today);
         saveData();
         renderUI(); 
@@ -160,14 +181,15 @@ function checkDailySettlement() {
     }
 }
 
-// --- 业务逻辑 ---
+// --- 业务功能 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
     if(!text) return showToast("请输入任务内容", "error");
 
     const targetDate = getTaskTargetDate(); 
-    const displayDate = targetDate === getRealDate() ? "" : "[明日] ";
+    const isTomorrow = targetDate !== getRealDate();
+    const displayPrefix = isTomorrow ? "[明日] " : "";
     
     let icon = "📖";
     if(type === '赛') icon = "🏆";
@@ -175,7 +197,7 @@ function addTodo() {
 
     appData.todos.push({
         id: Date.now(),
-        text: `${displayDate}${icon} ${text}`,
+        text: `${displayPrefix}${icon} ${text}`,
         rawText: text,
         date: targetDate,
         done: false,
@@ -185,7 +207,7 @@ function addTodo() {
     document.getElementById('todoInput').value = '';
     saveData();
     
-    if(targetDate !== getRealDate()) {
+    if(isTomorrow) {
         showToast("已加入明日计划 (23:30后自动归为明天)", "success");
     }
 }
@@ -212,7 +234,6 @@ function submitAC() {
     });
     appData.xp += conf.xp;
     
-    // 升级判定
     const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
     if(nextLv > appData.level) { appData.level = nextLv; showToast(`🎉 升级啦 LV.${nextLv}`, "success"); }
 
@@ -252,19 +273,15 @@ function processBatch() {
                 const colorMap = {'红':'luogu_red', '橙':'luogu_orange', '黄':'luogu_yellow', '绿':'luogu_green', '蓝':'luogu_blue', '紫':'luogu_purple', '黑':'luogu_black'};
                 validKey = colorMap[charMatch[1]] || "1200";
                 name = charMatch[2];
-            } else {
-                continue; 
-            }
+            } else { continue; }
         }
 
         const config = RATINGS[validKey];
         appData.logs.unshift({
             id: Date.now() + i, 
             date: getRealDate(),
-            name: name,
-            ratingVal: validKey,
-            link: "", sol: "",
-            xp: config.xp
+            name: name, ratingVal: validKey,
+            link: "", sol: "", xp: config.xp
         });
         appData.xp += config.xp;
         count++;
@@ -278,9 +295,7 @@ function processBatch() {
         document.getElementById('batchInput').value = "";
         showToast(`⚡ 成功导入 ${count} 题！`, "success");
         fireConfetti();
-    } else {
-        showToast("格式错误，请检查", "error");
-    }
+    } else { showToast("格式错误", "error"); }
 }
 
 // --- 渲染逻辑 ---
@@ -304,23 +319,33 @@ function renderUI() {
 }
 
 function renderTodos() {
+    // 列表里只显示“今天”和“明天（预设）”的任务
     const todayStr = getRealDate();
     const list = document.getElementById('todoList');
     list.innerHTML = "";
     
-    const todayTodos = appData.todos.filter(t => t.date === todayStr);
-    const doneCount = todayTodos.filter(t => t.done).length;
+    // 过滤出 >= 今天的任务
+    const activeTodos = appData.todos.filter(t => t.date >= todayStr);
     
-    // 进度条
-    const progress = todayTodos.length ? Math.round((doneCount/todayTodos.length)*100) : 0;
+    // 计算今日进度 (只算 date == today 的)
+    const todayOnlyTodos = appData.todos.filter(t => t.date === todayStr);
+    const doneCount = todayOnlyTodos.filter(t => t.done).length;
+    const progress = todayOnlyTodos.length ? Math.round((doneCount/todayOnlyTodos.length)*100) : 0;
+    
     document.getElementById('dailyProgress').style.width = `${progress}%`;
     document.getElementById('progressText').innerText = `${progress}%`;
-    if(progress === 100 && todayTodos.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
+    if(progress === 100 && todayOnlyTodos.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
     else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
 
-    if(todayTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日任务已清空 / 尚未添加</div>`;
+    if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日任务已清空 / 尚未添加</div>`;
     
-    todayTodos.forEach(t => {
+    // 排序：先按日期(今天在前)，再按完成状态(未完成在前)
+    activeTodos.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.done - b.done;
+    });
+
+    activeTodos.forEach(t => {
         list.innerHTML += `
         <div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}">
             <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div>
@@ -398,12 +423,10 @@ function renderCalendar() {
         const dStr = String(d).padStart(2,'0');
         const mStr = String(m+1).padStart(2,'0');
         const dateStr = `${y}-${mStr}-${dStr}`;
-        
         const el = document.createElement('div');
         el.className = `cal-cell ${activeDays[dateStr] ? 'active' : ''} ${dateStr===todayStr?'today':''}`;
         el.innerText = d;
         grid.appendChild(el);
-        
         if(new Date(dateStr) <= now && activeDays[dateStr]) streak++;
         else if(new Date(dateStr) < now && !activeDays[dateStr]) streak = 0;
     }
@@ -418,39 +441,18 @@ function renderChart() {
             const conf = RATINGS[l.ratingVal] || RATINGS["1200"]; 
             if (conf) groupStats[conf.group]++; 
         });
-
         if (window.myRadarChart) window.myRadarChart.destroy();
         const isDark = document.body.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
         const themeColor = currentTheme.p;
-
         window.myRadarChart = new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: ['入门', '普及', '提高', '省选', 'NOI'],
-                datasets: [{
-                    label: 'AC',
-                    data: groupStats,
-                    backgroundColor: themeColor + '33',
-                    borderColor: themeColor,
-                    pointBackgroundColor: currentTheme.a,
-                    pointBorderColor: '#fff',
-                    borderWidth: 2
-                }]
+                datasets: [{ label: 'AC', data: groupStats, backgroundColor: themeColor + '33', borderColor: themeColor, pointBackgroundColor: currentTheme.a, pointBorderColor: '#fff', borderWidth: 2 }]
             },
-            options: {
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: gridColor },
-                        grid: { color: gridColor },
-                        pointLabels: { color: textColor, font: { size: 10, family: 'JetBrains Mono' } },
-                        ticks: { display: false, backdropColor: 'transparent' }
-                    }
-                },
-                plugins: { legend: { display: false } }
-            }
+            options: { maintainAspectRatio: false, scales: { r: { angleLines: { color: gridColor }, grid: { color: gridColor }, pointLabels: { color: textColor, font: { size: 10, family: 'JetBrains Mono' } }, ticks: { display: false, backdropColor: 'transparent' } } }, plugins: { legend: { display: false } } }
         });
     }
 }
@@ -476,10 +478,9 @@ function renderCountdowns() {
     targets.forEach((t, idx) => {
         const targetDate = new Date(t.date);
         const now = new Date();
-        const diff = targetDate - now;
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        const urgentClass = (days <= 7 && days >= 0) ? 'urgent' : '';
-        const dayText = days >= 0 ? `${days} 天` : '已结束';
+        const diff = Math.ceil((targetDate - now) / 86400000);
+        const urgentClass = (diff <= 7 && diff >= 0) ? 'urgent' : '';
+        const dayText = diff >= 0 ? `${diff} 天` : '已结束';
         container.innerHTML += `
         <div class="cd-row">
             <span class="cd-name">${escapeHtml(t.name)}</span>
@@ -500,13 +501,15 @@ function renderTargetList() {
     });
 }
 
-// --- 辅助工具 (之前缺失的部分补在这里) ---
+// --- 辅助工具 (完整版) ---
 
 function openModal(id) {
     const el = document.getElementById(id);
     if(el) {
         el.classList.add('show');
         if(id === 'targetModal') renderTargetList();
+    } else {
+        console.error("弹窗ID不存在:", id);
     }
 }
 
@@ -619,7 +622,6 @@ function loadTimer() {
         const todayStr = getRealDate(); 
         if (saved) { 
             timerState = JSON.parse(saved); 
-            // 如果日期变更，重置计时器
             if (timerState.date !== todayStr) { 
                 timerState.totalTime = 0; 
                 timerState.date = todayStr; 
@@ -634,7 +636,6 @@ function saveTimer() { localStorage.setItem('studyTimer', JSON.stringify(timerSt
 
 function toggleTimer() {
     if (timerState.isRunning) {
-        // 停止
         timerState.totalTime += Date.now() - timerState.startTime;
         timerState.isRunning = false;
         clearInterval(timerInterval);
@@ -642,7 +643,6 @@ function toggleTimer() {
         updateTimerUI(false);
         updateTimerDisplay(timerState.totalTime);
     } else {
-        // 开始
         timerState.startTime = Date.now();
         timerState.isRunning = true;
         saveTimer();
@@ -758,23 +758,14 @@ function escapeHtml(text) {
 }
 
 function getStreak(d) { 
-    // 简易连击计算
     const today = getRealDate();
     let streak = 0;
     let checkDate = new Date(today);
-    
-    // 最多回溯365天检查
     for(let i=0; i<365; i++) {
         const dateStr = checkDate.toISOString().split('T')[0];
         const hasLog = d.logs.some(l => l.date === dateStr);
-        if(hasLog) {
-            streak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            // 如果今天是0，允许断一天？暂时严格模式
-            if(i===0) { checkDate.setDate(checkDate.getDate() - 1); continue; }
-            break;
-        }
+        if(hasLog) { streak++; checkDate.setDate(checkDate.getDate() - 1); } 
+        else { if(i===0) { checkDate.setDate(checkDate.getDate() - 1); continue; } break; }
     }
     return streak;
 }
