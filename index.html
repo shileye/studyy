@@ -1,246 +1,201 @@
-你的代码整体逻辑已经很完善了，日历卡片也放回去了。不过我检查了一下，发现了一个非常细微但致命的 HTML 结构闭合问题，这可能是导致你之前日历显示不出来，或者页面布局错乱的根本原因。
-
-🚨 问题点
-仔细看这一段：
-
-HTML
-        <div class="card">
-            ...
-            <div class="quick-links">...</div>
-            <div class="btn-group">...</div>
-        </div> </div> <div class="card">
-            <div id="calTitle">...</div>
-            <div id="calGrid">...</div>
-        </div>
-    </div> ```
-
-在你的代码里，`<div class="sidebar">` 并没有正确包裹住所有的卡片。因为那个 `XP/Badge` 的 `card` 结束后，你多写了一个 `</div>`，导致 **Sidebar 提前结束了**。
-
-这会导致：
-1.  **日历卡片** 被挤到了侧边栏外面，变成了一个新的主块，可能会被 `main` 挤到页面最底下看不见。
-2.  **布局错乱**：CSS 里的 `grid-area: sidebar` 只管到了第一张卡片，后面的卡片就变成流浪汉了。
-
----
-
-### ✅ V9.2 终极修复版 (Index.html)
-我已经帮你把那几个该死的 `div` 闭合位置调整好了。请**直接全选覆盖 `index.html`**。
-
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻</title>
+    <title>ICPC 2026 // 决战时刻 V10</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -999;"></canvas>
+<canvas id="confetti-canvas"></canvas>
 
 <input type="file" id="fileInput" style="display: none;" onchange="importData(this)">
 
-<div class="ac-modal" id="targetModal">
-    <div class="card batch-card" onclick="event.stopPropagation()">
+<div class="modal" id="targetModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
         <h3>📅 赛季日程管理</h3>
-        <div id="targetList" class="target-list"></div>
-        <div class="row" style="margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
-            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 省赛)" style="flex:2">
+        <div id="targetList" class="list-scroll"></div>
+        <div class="input-row">
+            <input type="text" id="newTargetName" placeholder="赛事名称" style="flex:2">
             <input type="date" id="newTargetDate" style="flex:1.5">
-            <button class="btn btn-ai" onclick="addTarget()" style="width:auto">➕ 添加</button>
+            <button class="btn btn-primary" onclick="addTarget()">添加</button>
         </div>
-        <button class="btn" style="width:100%; margin-top:10px; background:var(--border); color:var(--text-main)" onclick="closeTargetModal()">关闭</button>
+        <button class="btn btn-outline" onclick="closeModal('targetModal')" style="margin-top:10px; width:100%;">关闭</button>
     </div>
 </div>
 
-<div class="ac-modal" id="batchModal">
-    <div class="card batch-card" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0;">⚡ 批量速记</h3>
-        <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">
+<div class="modal" id="batchModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>⚡ 批量速记 (Batch Import)</h3>
+        <p class="hint-text">
             格式：<b>[分数/颜色] 题目名</b><br>
-            <code>1200 A. Math Problem</code><br>
-            <code>绿 P1024 线性代数</code>
+            <code>1200 A. Math Problem</code> / <code>绿 P1024 线性代数</code>
         </p>
-        <textarea id="batchInput" class="batch-input" rows="8" placeholder="粘贴内容..."></textarea>
-        <div class="row">
-            <button class="btn" style="background:var(--border); color:var(--text-main); flex:1;" onclick="closeBatchModal()">取消</button>
-            <button class="btn btn-ai" style="flex:1;" onclick="processBatch()">🚀 入库</button>
+        <textarea id="batchInput" class="batch-textarea" rows="8" placeholder="粘贴内容..."></textarea>
+        <div class="input-row">
+            <button class="btn btn-outline" onclick="closeModal('batchModal')" style="flex:1;">取消</button>
+            <button class="btn btn-primary" onclick="processBatch()" style="flex:1;">入库</button>
         </div>
     </div>
 </div>
 
-<div class="ac-modal" id="acModal" onclick="closeAC()">
-    <div class="ac-cow-container">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="110" r="60" fill="#fff" stroke="#333" stroke-width="4"/>
-            <path d="M60,110 Q70,90 90,110 T110,130" fill="none" stroke="#333" stroke-width="0" fill-opacity="0.2"/>
-            <circle cx="70" cy="90" r="10" fill="#333"/>
-            <circle cx="130" cy="120" r="15" fill="#333"/>
-            <ellipse cx="40" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(-20 40 90)"/>
-            <ellipse cx="160" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(20 160 90)"/>
-            <path d="M60,70 Q50,40 70,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
-            <path d="M140,70 Q150,40 130,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
-            <circle cx="80" cy="100" r="5" fill="#333"/>
-            <circle cx="120" cy="100" r="5" fill="#333"/>
-            <ellipse cx="100" cy="130" rx="25" ry="15" fill="#fca5a5" stroke="#333" stroke-width="2"/>
-            <circle cx="90" cy="130" r="3" fill="#333"/>
-            <circle cx="110" cy="130" r="3" fill="#333"/>
-            <path d="M140,150 L160,140 L165,120 Q175,110 185,125 L180,150 Z" fill="#fff" stroke="#333" stroke-width="3"/>
-            <rect x="160" y="140" width="20" height="20" rx="5" fill="#fff" stroke="#333" stroke-width="3"/>
-            <text x="165" y="155" font-size="15">👍</text>
-        </svg>
+<div class="modal" id="acModal" onclick="closeModal('acModal')">
+    <div class="ac-cow-wrapper">
+        <div class="ac-cow-container">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="110" r="60" fill="#fff" stroke="#333" stroke-width="4"/>
+                <path d="M60,110 Q70,90 90,110 T110,130" fill="none" stroke="#333" stroke-width="0" fill-opacity="0.2"/>
+                <ellipse cx="40" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(-20 40 90)"/>
+                <ellipse cx="160" cy="90" rx="15" ry="10" fill="#fff" stroke="#333" stroke-width="3" transform="rotate(20 160 90)"/>
+                <path d="M60,70 Q50,40 70,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+                <path d="M140,70 Q150,40 130,30" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="80" cy="100" r="5" fill="#333"/>
+                <circle cx="120" cy="100" r="5" fill="#333"/>
+                <ellipse cx="100" cy="130" rx="25" ry="15" fill="#fca5a5" stroke="#333" stroke-width="2"/>
+                <path d="M140,150 L160,140 L165,120 Q175,110 185,125 L180,150 Z" fill="#fff" stroke="#333" stroke-width="3"/>
+                <text x="165" y="155" font-size="15">👍</text>
+            </svg>
+        </div>
+        <div class="ac-text">AC！恭喜通过！</div>
+        <div class="ac-subtext">点击任意处关闭</div>
     </div>
-    <div class="ac-text">AC！恭喜通过！</div>
-    <div class="ac-subtext">点击任意处关闭</div>
 </div>
 
-<div class="container">
-    <div class="theme-switch" onclick="toggleTheme()">🌓</div>
-
-    <div class="quote-box">
-        <div class="quote-content" id="qContent">Loading...</div>
+<div class="layout-container">
+    <div class="header-section">
+        <div class="theme-switch" onclick="toggleTheme()">🌓</div>
+        <div class="quote-content" id="qContent">Code & Sorrow</div>
         <div class="quote-author" id="qAuthor"></div>
         <div class="timer-bar"></div>
     </div>
 
-    <div class="sidebar">
-        <div class="card countdown-container" onclick="openTargetModal()" title="点击管理比赛日程">
-            <h4 style="margin:0 0 10px 0; font-size:0.9rem; opacity:0.8;">📅 赛季日程 (Timeline)</h4>
-            <div id="countdownList"></div>
-            <div style="font-size:0.75rem; text-align:center; margin-top:5px; opacity:0.5;">(点击添加比赛)</div>
+    <aside class="sidebar">
+        <div class="card calendar-card">
+            <div class="calendar-header" id="calTitle">2026 年 2 月</div>
+            <div class="calendar-weekdays">
+                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            </div>
+            <div class="calendar-grid" id="calGrid"></div>
+            <div class="streak-info">🔥 连续打卡: <b id="streakDays">0</b> 天</div>
         </div>
 
-        <div class="card timer-card">
+        <div class="card clickable" onclick="openModal('targetModal')" title="点击管理">
+            <h4 class="card-title">📅 赛季日程</h4>
+            <div id="countdownList"></div>
+        </div>
+
+        <div class="card">
             <div class="timer-header">
-                <span>⏱️ 今日有效学习</span>
-                <div id="timerStatus" class="timer-status offline">休息中</div>
+                <span>⏱️ 今日专注</span>
+                <div id="timerStatus" class="tag offline">休息中</div>
             </div>
             <div class="timer-display" id="totalTimeDisplay">00:00:00</div>
-            <button id="timerBtn" class="btn btn-timer start" onclick="toggleTimer()">🚀 开始专注 (Clock In)</button>
+            <button id="timerBtn" class="btn btn-primary full-width" onclick="toggleTimer()">🚀 开始专注</button>
         </div>
 
         <div class="card">
-            <div class="user-header">
-                <h2 style="margin:5px 0" id="username">Algo_Warrior</h2>
+            <div class="user-info">
+                <h2 id="username">Algo_Warrior</h2>
                 <div class="rank-badge" id="lvTitle">Unrated</div>
             </div>
+            <div class="xp-box">
+                <div class="xp-text"><span>LV.<span id="lvNum">1</span></span><span><span id="curXP">0</span> / <span id="nextXP">100</span></span></div>
+                <div class="xp-track"><div class="xp-bar" id="xpFill"></div></div>
+            </div>
             
-            <div class="xp-container">
-                <div class="xp-info">
-                    <span>LV.<span id="lvNum">1</span></span>
-                    <span><span id="curXP">0</span> / <span id="nextXP">100</span> XP</span>
-                </div>
-                <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+            <div class="theme-dots">
+                <div class="dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
+                <div class="dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
+                <div class="dot" style="background:#ef4444;" onclick="changeColor('#ef4444', '#facc15')"></div>
+                <div class="dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
             </div>
 
-            <div class="theme-selector">
-                <div class="color-dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
-                <div class="color-dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
-                <div class="color-dot" style="background:#ef4444;" onclick="changeColor('#ef4444', '#facc15')"></div>
-                <div class="color-dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
-                <div class="color-dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
+            <div class="chart-wrapper">
+                <canvas id="radarChart"></canvas>
             </div>
 
-            <div class="badge-grid" id="badgeGrid"></div>
-
-            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
-                <span style="margin-right:15px;">🏆 AC: <b id="totalAC">0</b></span>
-                <span>🔥 连打: <b id="streakDays" style="color:var(--accent)">0</b></span>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <h4 style="margin:0 0 10px 0; text-align:center; opacity:0.7; font-size:0.85rem;">⚔️ 六维战力图</h4>
-                <div class="chart-box">
-                    <canvas id="radarChart"></canvas>
-                </div>
-            </div>
-
-            <div class="rating-stats" id="ratingStatsBox"></div>
-
-            <div class="quick-links">
-                <a href="https://codeforces.com/" target="_blank" class="q-link">📊 CF</a>
-                <a href="https://www.luogu.com.cn/" target="_blank" class="q-link" style="background:rgba(52, 152, 219, 0.1); color:#3498db;">🚀 洛谷</a>
-                <a href="https://clist.by/" target="_blank" class="q-link" style="grid-column: 1 / -1; background: var(--text-main); color: white;">📅 查比赛 (Clist)</a>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn btn-ai" onclick="generateAIPrompt()">🤖 AI 复盘</button>
-                <button class="btn btn-share" onclick="copyReport()">📋 复制战报</button>
-                <button class="btn" style="background:var(--text-main); grid-column: 1 / -1;" onclick="openBatchModal()">⚡ 批量速记模式</button>
-                <div style="grid-column: 1 / -1; display:flex; gap:8px; margin-top:5px;">
-                    <button class="btn" style="flex:1; background:var(--border); color:var(--text-main); font-size:0.8rem;" onclick="exportData()">💾 备份</button>
-                    <button class="btn" style="flex:1; background:var(--border); color:var(--text-main); font-size:0.8rem;" onclick="document.getElementById('fileInput').click()">📂 读档</button>
-                </div>
+            <div class="action-grid">
+                <a href="https://codeforces.com/" target="_blank" class="btn-link">CF</a>
+                <a href="https://clist.by/" target="_blank" class="btn-link">Clist</a>
+                <button class="btn-link" onclick="openModal('batchModal')">⚡ 批量</button>
+                <button class="btn-link" onclick="exportData()">💾 备份</button>
+                <button class="btn-link" onclick="document.getElementById('fileInput').click()">📂 读档</button>
             </div>
         </div>
+    </aside>
 
+    <main class="main-content">
         <div class="card">
-            <div style="font-weight:bold; margin-bottom:10px;" id="calTitle"></div>
-            <div class="calendar-grid" id="calGrid"></div>
-        </div>
-    </div> <div class="main">
-        <div class="card todo-section">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0; color:var(--primary);">📜 今日任务 (Daily)</h3>
-                <span id="logicalDateDisplay" style="font-size:0.75rem; color:var(--text-light); font-family:'JetBrains Mono'">Loading...</span>
+            <div class="section-header">
+                <h3 class="section-title">📜 今日任务 (截止 23:30)</h3>
+                <span class="date-badge" id="currentDateDisplay">Loading...</span>
             </div>
             
-            <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
-                <div class="progress-bg"><div class="progress-bar" id="dailyProgress" style="width:0%"></div></div>
-                <div style="font-family:'JetBrains Mono'; font-weight:bold; font-size:0.9rem;" id="progressText">0%</div>
+            <div class="progress-container">
+                <div class="progress-track"><div class="progress-fill" id="dailyProgress"></div></div>
+                <span class="progress-text" id="progressText">0%</span>
             </div>
 
-            <div class="row" style="margin-top:15px;">
+            <div class="input-group">
                 <select id="todoType" style="flex:1;">
                     <option value="题">📖 刷题</option>
                     <option value="赛">🏆 比赛</option>
                     <option value="学">🧠 补题</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="任务内容 (4点前算昨天)" style="flex:3;">
-                <button class="btn-submit" style="width:auto; padding:10px 20px;" onclick="addTodo()">添加</button>
+                <input type="text" id="todoInput" placeholder="任务内容..." style="flex:4;">
+                <button class="btn btn-primary" onclick="addTodo()">添加</button>
             </div>
-            <div class="todo-list" id="todoList"></div>
+            
+            <div id="todoList" class="task-list"></div>
         </div>
 
-        <div class="card input-box" id="submitZone">
-            <h3 style="margin:0;">⚔️ 提交代码 (Commit)</h3>
-            <div class="row">
-                <select id="ratingSelect" style="flex:1.5;">
+        <div class="card">
+            <h3 class="section-title">⚔️ 提交代码 (Commit)</h3>
+            <div class="input-grid">
+                <select id="ratingSelect">
                     <option disabled selected>--- CF Rating ---</option>
-                    <option value="1200">Newbie (1200+)</option>
-                    <option value="1500">Pupil (1400+)</option>
-                    <option value="1750">Specialist (1600+)</option>
-                    <option value="2000">Expert (1900+)</option>
-                    <option value="2200">Master (2100+)</option>
-                    <option disabled>--- 洛谷难度 ---</option>
+                    <option value="1200">Newbie (1200)</option>
+                    <option value="1500">Pupil (1500)</option>
+                    <option value="1750">Specialist (1750)</option>
+                    <option value="2000">Expert (2000)</option>
+                    <option value="2200">Master (2200)</option>
+                    <option disabled>--- 洛谷 ---</option>
                     <option value="luogu_red">🔴 入门</option>
                     <option value="luogu_orange">🟠 普及-</option>
                     <option value="luogu_yellow">🟡 普及/提高-</option>
                     <option value="luogu_green">🟢 普及+/提高</option>
                     <option value="luogu_blue">🔵 提高+/省选-</option>
                     <option value="luogu_purple">🟣 省选/NOI-</option>
-                    <option disabled>--- 特殊 ---</option>
+                    <option disabled>--- 其他 ---</option>
                     <option value="unrated">❓ 未知/比赛中</option>
                 </select>
-                <input type="text" id="probName" placeholder="题目名称 (比赛题目可不填)" style="flex:2;">
+                <input type="text" id="probName" placeholder="题目名称">
             </div>
-            <div class="row">
+            <div class="input-grid" style="margin-top:10px;">
                 <input type="text" id="probLink" placeholder="原题链接">
-                <input type="text" id="solLink" placeholder="我的代码/博客链接">
+                <input type="text" id="solLink" placeholder="我的代码链接">
             </div>
-            <button class="btn-submit" onclick="submitAC()">✅ 确认 AC</button>
+            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC</button>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">🗓️ 时光轨迹</h3>
-            <input type="text" id="searchInput" placeholder="🔍 搜索..." oninput="renderUI()" style="width:150px; font-size:0.85rem; padding:6px;">
+        <div class="card">
+            <h3 class="section-title">📚 历史结算 (Past 7 Days)</h3>
+            <div id="historyList" class="history-list"></div>
         </div>
-        <div class="log-list" id="logList"></div>
-    </div>
 
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会。</div>
+        <div class="log-section">
+            <div class="section-header">
+                <h3 class="section-title">🗓️ 刷题轨迹</h3>
+                <input type="text" id="searchInput" placeholder="🔍 搜索..." oninput="renderUI()" class="search-input">
+            </div>
+            <div id="logList" class="log-list"></div>
+        </div>
+    </main>
+
+    <div class="footer-msg">种一棵树最好的时间是十年前，其次是现在。</div>
 </div>
 
 <script src="js/script.js"></script>
