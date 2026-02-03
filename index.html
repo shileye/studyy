@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 REBORN</title>
+    <title>ICPC 2026 // 决战时刻 V13</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,10 +15,10 @@
 
 <div class="modal" id="targetModal">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>📅 赛季作战地图</h3>
+        <h3>📅 赛事时间表管理</h3>
         <div id="targetList" class="list-scroll"></div>
         <div class="input-row">
-            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 区域赛)" style="flex:2">
+            <input type="text" id="newTargetName" placeholder="赛事名称 (如: 牛客多校)" style="flex:2">
             <input type="date" id="newTargetDate" style="flex:1.5">
             <button class="btn btn-primary" onclick="addTarget()">➕ 添加</button>
         </div>
@@ -80,10 +80,11 @@
         <div class="quote-author" id="qAuthor"></div>
         <div class="timer-bar"></div>
     </div> 
+
     <aside class="sidebar">
         <div class="card countdown-card clickable" onclick="openModal('targetModal')">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 class="card-title">🏆 赛季作战地图</h4>
+                <h4 class="card-title">🗓️ 线下赛 & 线上赛时间</h4>
                 <span style="font-size:0.8rem; opacity:0.5;">⚙️</span>
             </div>
             <div id="countdownList"></div>
@@ -107,6 +108,7 @@
                 <div class="xp-text"><span>LV.<span id="lvNum">1</span></span><span><span id="curXP">0</span> / <span id="nextXP">100</span></span></div>
                 <div class="xp-track"><div class="xp-bar" id="xpFill"></div></div>
             </div>
+            
             <div class="theme-dots">
                 <div class="dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
                 <div class="dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
@@ -114,10 +116,15 @@
                 <div class="dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
                 <div class="dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
             </div>
+
             <div class="action-grid">
+                <a href="https://ac.nowcoder.com/acm/contest/vip-index" target="_blank" class="btn-link">🐮 牛客竞赛</a>
+                <a href="https://codeforces.com/contests" target="_blank" class="btn-link">🟦 Codeforces</a>
+                <a href="https://atcoder.jp/" target="_blank" class="btn-link">⬛ AtCoder</a>
+                <a href="https://clist.by/" target="_blank" class="btn-link">📅 Clist</a>
                 <button class="btn-link" onclick="openModal('batchModal')">⚡ 批量</button>
                 <button class="btn-link" onclick="exportData()">💾 备份</button>
-                <button class="btn-link" onclick="document.getElementById('fileInput').click()">📂 读档</button>
+                <button class="btn-link" onclick="document.getElementById('fileInput').click()" style="grid-column: span 2;">📂 读档</button>
             </div>
         </div>
 
@@ -133,7 +140,8 @@
         <div class="card">
             <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
         </div>
-    </aside> 
+    </aside>
+
     <main class="main-content">
         <div class="card">
             <div class="section-header">
@@ -198,7 +206,8 @@
             </div>
             <div id="logList" class="log-list"></div>
         </div>
-    </main> 
+    </main>
+
     <div class="footer-msg">种一棵树最好的时间是十年前，其次是现在。</div>
 </div>
 
