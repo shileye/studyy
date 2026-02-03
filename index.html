@@ -10,16 +10,16 @@
 </head>
 <body>
 
-<canvas id="confetti-canvas" style="z-index: -1;"></canvas>
+<canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
 
 <input type="file" id="fileInput" style="display: none;" onchange="importData(this)">
 
 <div class="ac-modal" id="targetModal">
     <div class="card batch-card" onclick="event.stopPropagation()">
-        <h3>📅 赛季日程管理 (Timeline)</h3>
+        <h3>📅 赛季日程管理</h3>
         <div id="targetList" class="target-list"></div>
         <div class="row" style="margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
-            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 网络赛)" style="flex:2">
+            <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 省赛)" style="flex:2">
             <input type="date" id="newTargetDate" style="flex:1.5">
             <button class="btn btn-ai" onclick="addTarget()" style="width:auto">➕ 添加</button>
         </div>
@@ -29,17 +29,16 @@
 
 <div class="ac-modal" id="batchModal">
     <div class="card batch-card" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0;">⚡ 批量速记 (Batch Import)</h3>
+        <h3 style="margin-top:0;">⚡ 批量速记</h3>
         <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">
-            支持 CF 分数或洛谷颜色 (红/橙/黄/绿/蓝/紫/黑)<br>
             格式：<b>[分数/颜色] 题目名</b><br>
             <code>1200 A. Math Problem</code><br>
             <code>绿 P1024 线性代数</code>
         </p>
-        <textarea id="batchInput" class="batch-input" rows="8" placeholder="在这里粘贴..."></textarea>
+        <textarea id="batchInput" class="batch-input" rows="8" placeholder="粘贴内容..."></textarea>
         <div class="row">
             <button class="btn" style="background:var(--border); color:var(--text-main); flex:1;" onclick="closeBatchModal()">取消</button>
-            <button class="btn btn-ai" style="flex:1;" onclick="processBatch()">🚀 一键入库</button>
+            <button class="btn btn-ai" style="flex:1;" onclick="processBatch()">🚀 入库</button>
         </div>
     </div>
 </div>
@@ -73,14 +72,14 @@
     <div class="theme-switch" onclick="toggleTheme()">🌓</div>
 
     <div class="quote-box">
-        <div class="quote-content" id="qContent">Loading...</div>
+        <div class="quote-content" id="qContent">Code & Sorrow</div>
         <div class="quote-author" id="qAuthor"></div>
         <div class="timer-bar"></div>
     </div>
 
     <div class="sidebar">
         <div class="card countdown-container" onclick="openTargetModal()" title="点击管理比赛日程">
-            <h4 style="margin:0 0 10px 0; font-size:0.9rem; opacity:0.8;">📅 赛季日程 (Season Timeline)</h4>
+            <h4 style="margin:0 0 10px 0; font-size:0.9rem; opacity:0.8;">📅 赛季日程 (Timeline)</h4>
             <div id="countdownList"></div>
             <div style="font-size:0.75rem; text-align:center; margin-top:5px; opacity:0.5;">(点击添加比赛)</div>
         </div>
@@ -152,30 +151,23 @@
 
     <div class="main">
         <div class="card todo-section">
-            <h3 style="margin:0; color:var(--primary);">📜 今日计划 (To-Do)</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; color:var(--primary);">📜 今日任务 (Daily)</h3>
+                <span id="logicalDateDisplay" style="font-size:0.75rem; color:var(--text-light); font-family:'JetBrains Mono'">Loading...</span>
+            </div>
             
             <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
                 <div class="progress-bg"><div class="progress-bar" id="dailyProgress" style="width:0%"></div></div>
                 <div style="font-family:'JetBrains Mono'; font-weight:bold; font-size:0.9rem;" id="progressText">0%</div>
             </div>
 
-            <div class="row" style="margin-top:15px; align-items: flex-end;">
-                <div style="flex:1;">
-                    <label style="font-size:0.75rem; color:var(--text-light);">类型</label>
-                    <select id="todoType">
-                        <option value="题">📖 刷题</option>
-                        <option value="赛">🏆 比赛/VP</option>
-                        <option value="学">🧠 补题/学习</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:0.75rem; color:var(--text-light);">时间 (可选)</label>
-                    <input type="time" id="todoTime">
-                </div>
-                <div style="flex:3;">
-                    <label style="font-size:0.75rem; color:var(--text-light);">任务内容</label>
-                    <input type="text" id="todoInput" placeholder="e.g. CF Round #999">
-                </div>
+            <div class="row" style="margin-top:15px;">
+                <select id="todoType" style="flex:1;">
+                    <option value="题">📖 刷题</option>
+                    <option value="赛">🏆 比赛</option>
+                    <option value="学">🧠 补题</option>
+                </select>
+                <input type="text" id="todoInput" placeholder="任务内容 (23点前算今天)" style="flex:3;">
                 <button class="btn-submit" style="width:auto; padding:10px 20px;" onclick="addTodo()">添加</button>
             </div>
             <div class="todo-list" id="todoList"></div>
