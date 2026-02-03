@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 PRO</title>
+    <title>ICPC 2026 // 决战时刻 REBORN</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -999;"></canvas>
-
+<canvas id="confetti-canvas"></canvas>
 <input type="file" id="fileInput" style="display: none;" onchange="importData(this)">
 
 <div class="modal" id="targetModal">
@@ -21,20 +20,16 @@
         <div class="input-row">
             <input type="text" id="newTargetName" placeholder="赛事名称 (e.g. 区域赛)" style="flex:2">
             <input type="date" id="newTargetDate" style="flex:1.5">
-            <button class="btn btn-primary" onclick="addTarget()">➕ 添加节点</button>
+            <button class="btn btn-primary" onclick="addTarget()">➕ 添加</button>
         </div>
-        <button class="btn btn-outline full-width" style="margin-top:10px;" onclick="closeModal('targetModal')">关闭</button>
+        <button class="btn btn-outline full-width" style="margin-top:10px;" onclick="closeModal('targetModal')">完成</button>
     </div>
 </div>
 
 <div class="modal" id="batchModal">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3>⚡ 极速入库 (Batch)</h3>
-        <p class="hint-text">
-            格式：<b>[难度] 题目名</b><br>
-            <code>1600 C. The Legend</code><br>
-            <code>蓝 P3372 线段树</code>
-        </p>
+        <p class="hint-text">格式：<code>1600 题目名</code> 或 <code>蓝 P1001 A+B</code></p>
         <textarea id="batchInput" class="batch-textarea" rows="8" placeholder="粘贴内容..."></textarea>
         <div class="input-row">
             <button class="btn btn-outline" onclick="closeModal('batchModal')" style="flex:1;">取消</button>
@@ -61,18 +56,18 @@
             </svg>
         </div>
         <div class="ac-text">AC Accepted!</div>
-        <div class="ac-subtext">点击任意处关闭</div>
+        <div class="ac-subtext">太强了！继续保持！</div>
     </div>
 </div>
 
 <div class="modal" id="confirmModal">
     <div class="modal-card" style="text-align: center; max-width: 350px;">
         <div style="font-size:3rem; margin-bottom:10px;">🗑️</div>
-        <h3 style="margin:0 0 10px 0;">确定要删除吗？</h3>
+        <h3 style="margin:0 0 10px 0;">确定删除？</h3>
         <p style="color:var(--text-light); font-size:0.9rem; margin-bottom:20px;">此操作无法撤销。</p>
         <div class="input-row">
             <button class="btn btn-outline" style="flex:1;" onclick="closeModal('confirmModal')">取消</button>
-            <button class="btn btn-danger" style="flex:1;" id="confirmDeleteBtn">确认删除</button>
+            <button class="btn btn-danger" style="flex:1;" id="confirmDeleteBtn">删除</button>
         </div>
     </div>
 </div>
@@ -84,11 +79,9 @@
         <div class="quote-content" id="qContent">Code & Sorrow</div>
         <div class="quote-author" id="qAuthor"></div>
         <div class="timer-bar"></div>
-    </div>
-
+    </div> 
     <aside class="sidebar">
-        
-        <div class="card countdown-card clickable" onclick="openModal('targetModal')" title="点击管理">
+        <div class="card countdown-card clickable" onclick="openModal('targetModal')">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h4 class="card-title">🏆 赛季作战地图</h4>
                 <span style="font-size:0.8rem; opacity:0.5;">⚙️</span>
@@ -102,7 +95,7 @@
                 <div id="timerStatus" class="tag offline">OFF</div>
             </div>
             <div class="timer-display" id="totalTimeDisplay">00:00:00</div>
-            <button id="timerBtn" class="btn btn-primary full-width" onclick="toggleTimer()">🚀 开始专注 (Clock In)</button>
+            <button id="timerBtn" class="btn btn-primary full-width" onclick="toggleTimer()">🚀 开始专注</button>
         </div>
 
         <div class="card">
@@ -114,18 +107,14 @@
                 <div class="xp-text"><span>LV.<span id="lvNum">1</span></span><span><span id="curXP">0</span> / <span id="nextXP">100</span></span></div>
                 <div class="xp-track"><div class="xp-bar" id="xpFill"></div></div>
             </div>
-            
             <div class="theme-dots">
                 <div class="dot" style="background:#4f46e5;" onclick="changeColor('#4f46e5', '#db2777')"></div>
                 <div class="dot" style="background:#10b981;" onclick="changeColor('#10b981', '#f59e0b')"></div>
                 <div class="dot" style="background:#ef4444;" onclick="changeColor('#ef4444', '#facc15')"></div>
                 <div class="dot" style="background:#3b82f6;" onclick="changeColor('#3b82f6', '#ec4899')"></div>
-                <div class="color-dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
+                <div class="dot" style="background:#f59e0b;" onclick="changeColor('#f59e0b', '#6366f1')"></div>
             </div>
-
             <div class="action-grid">
-                <a href="https://codeforces.com/problemset" target="_blank" class="btn-link">CF题库</a>
-                <a href="https://clist.by/" target="_blank" class="btn-link">Clist</a>
                 <button class="btn-link" onclick="openModal('batchModal')">⚡ 批量</button>
                 <button class="btn-link" onclick="exportData()">💾 备份</button>
                 <button class="btn-link" onclick="document.getElementById('fileInput').click()">📂 读档</button>
@@ -142,35 +131,28 @@
         </div>
 
         <div class="card">
-            <div class="chart-wrapper">
-                <canvas id="radarChart"></canvas>
-            </div>
+            <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
         </div>
-    </aside>
-
+    </aside> 
     <main class="main-content">
-        
         <div class="card">
             <div class="section-header">
                 <h3 class="section-title">📜 今日计划 (To-Do)</h3>
                 <span class="date-badge" id="currentDateDisplay">Loading...</span>
             </div>
-            
             <div class="progress-container">
                 <div class="progress-track"><div class="progress-fill" id="dailyProgress"></div></div>
                 <span class="progress-text" id="progressText">0%</span>
             </div>
-
             <div class="input-group">
                 <select id="todoType" style="flex:1;">
                     <option value="题">📖 刷题</option>
-                    <option value="赛">🏆 比赛</option>
-                    <option value="学">🧠 补题</option>
+                    <option value="赛">🏆 比赛/VP</option>
+                    <option value="学">🧠 补题/学习</option>
                 </select>
-                <input type="text" id="todoInput" placeholder="输入任务 (23:30后自动记为明天)..." style="flex:4;">
+                <input type="text" id="todoInput" placeholder="输入任务 (点击 Go 去提交 AC)" style="flex:4;">
                 <button class="btn btn-primary" onclick="addTodo()">添加</button>
             </div>
-            
             <div id="todoList" class="task-list"></div>
         </div>
 
@@ -201,8 +183,7 @@
                 <input type="text" id="solLink" placeholder="📝 题解/代码链接 (可选)">
             </div>
             <input type="hidden" id="linkedTaskId" value="">
-            
-            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC (并完成对应任务)</button>
+            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC</button>
         </div>
 
         <div class="card">
@@ -217,9 +198,8 @@
             </div>
             <div id="logList" class="log-list"></div>
         </div>
-    </main>
-
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会</div>
+    </main> 
+    <div class="footer-msg">种一棵树最好的时间是十年前，其次是现在。</div>
 </div>
 
 <script src="js/script.js"></script>

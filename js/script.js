@@ -1,13 +1,13 @@
-// 全局错误捕获
+// 全局错误捕获 (防止报错卡死)
 window.onerror = function(msg, url, line) {
     console.error("Sys Error:", msg);
     return false;
 };
 
-// ★★★ 数据密钥：已改回旧版，找回你的历史记录 ★★★
-const DB_KEY = "algo_v7_cow"; 
+// ★★★ 全新干净的 KEY，确保不报错 ★★★
+const DB_KEY = "algo_v12_clean"; 
 
-// --- 基础配置 ---
+// --- 配置区 ---
 const RATINGS = {
     "1200": { color: "#9ca3af", label: "Newbie", xp: 10, group: 0 },
     "1500": { color: "#2dd4bf", label: "Pupil", xp: 25, group: 1 },
@@ -24,29 +24,19 @@ const RATINGS = {
 };
 
 const QUOTES = [
-    {t:"Talk is cheap. Show me the code.", a:"Linus"},
     {t:"十年生死两茫茫，不思量，自难忘。", a:"苏轼"},
+    {t:"Talk is cheap. Show me the code.", a:"Linus"},
     {t:"菜是原罪，练是救赎。", a:"小羊肖恩"},
     {t:"为了看一眼山顶的风景，我愿意流干汗水。", a:"攀登者"}
 ];
 
-const BADGES = [
-    { id: "b1", icon: "🌱", title: "初出茅庐", check: (d) => d.logs.length >= 1 },
-    { id: "b2", icon: "🔥", title: "持之以恒", check: (d) => getStreak(d) >= 3 },
-    { id: "b3", icon: "🦁", title: "毅力帝", check: (d) => getStreak(d) >= 7 },
-    { id: "b4", icon: "⚡", title: "肝帝", check: (d) => getTodayCount(d) >= 5 },
-    { id: "b5", icon: "⚔️", title: "挑战者", check: (d) => d.maxRating >= 1600 },
-    { id: "b6", icon: "👑", title: "大师", check: (d) => d.maxRating >= 1900 },
-    { id: "b8", icon: "💯", title: "百题斩", check: (d) => d.logs.length >= 100 }
-];
-
-// 数据状态
+// 数据默认值
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [] };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
 let timerInterval = null;
 let quoteIdx = 0;
 let currentTheme = { p: '#4f46e5', a: '#db2777' };
-let pendingDeleteAction = null; // 暂存删除操作
+let pendingDeleteAction = null; 
 
 // --- 初始化 ---
 window.onload = () => {
@@ -65,14 +55,10 @@ window.onload = () => {
         checkDailySettlement();
         renderUI();
         
-        // 实时时间显示
+        // 实时时间
         setInterval(() => {
             const now = new Date();
-            const timeStr = now.getFullYear() + "-" + 
-                String(now.getMonth()+1).padStart(2,'0') + "-" + 
-                String(now.getDate()).padStart(2,'0') + " " + 
-                String(now.getHours()).padStart(2,'0') + ":" + 
-                String(now.getMinutes()).padStart(2,'0');
+            const timeStr = now.toISOString().split('T')[0] + " " + now.toTimeString().substring(0, 5);
             const el = document.getElementById('currentDateDisplay');
             if(el) el.innerText = timeStr;
         }, 1000);
@@ -88,32 +74,34 @@ window.onload = () => {
             updateTimerDisplay(timerState.totalTime);
         }
 
-        // 绑定删除弹窗确认按钮
-        document.getElementById('confirmDeleteBtn').onclick = () => {
-            if(pendingDeleteAction) pendingDeleteAction();
-            closeModal('confirmModal');
-        };
+        // 删除确认绑定
+        const delBtn = document.getElementById('confirmDeleteBtn');
+        if(delBtn) {
+            delBtn.onclick = () => {
+                if(pendingDeleteAction) pendingDeleteAction();
+                closeModal('confirmModal');
+            };
+        }
 
     } catch(e) { console.error("Init Error:", e); }
 };
 
-// --- 时间逻辑 ---
+// --- 核心时间 ---
 function getRealDate() {
     const now = new Date();
+    // 简单处理时区，直接取 YYYY-MM-DD
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
 }
 
-// 23:30 分界线逻辑
 function getTaskTargetDate() {
     const now = new Date();
     const limit = new Date();
-    limit.setHours(23, 30, 0, 0);
+    limit.setHours(23, 30, 0, 0); 
 
     if (now > limit) {
-        // 超过23:30，归入明天
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const y = tomorrow.getFullYear();
@@ -125,7 +113,7 @@ function getTaskTargetDate() {
     }
 }
 
-// --- 每日结算 ---
+// --- 结算 ---
 function checkDailySettlement() {
     const today = getRealDate();
     const pastTodos = appData.todos.filter(t => t.date < today);
@@ -139,7 +127,6 @@ function checkDailySettlement() {
         });
 
         for(let date in groups) {
-            // 防止重复结算同一天
             if (!appData.history.find(h => h.date === date)) {
                 const rec = groups[date];
                 const pct = rec.total === 0 ? 0 : Math.round((rec.done / rec.total) * 100);
@@ -147,19 +134,18 @@ function checkDailySettlement() {
             }
         }
         
-        // 移除已结算任务
         appData.todos = appData.todos.filter(t => t.date >= today);
         saveData();
         renderUI(); 
-        showToast("📅 昨日任务已结算入库", "info");
+        showToast("📅 昨日任务已结算", "info");
     }
 }
 
-// --- 任务联动核心 ---
+// --- 业务 ---
 function addTodo() {
     const text = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
-    if(!text) return showToast("请输入任务内容", "error");
+    if(!text) return showToast("请输入内容", "error");
 
     const targetDate = getTaskTargetDate(); 
     const isTomorrow = targetDate !== getRealDate();
@@ -172,7 +158,7 @@ function addTodo() {
     appData.todos.push({
         id: Date.now(),
         text: `${displayPrefix}${icon} ${text}`,
-        rawText: text, // 保留纯文本用于自动填充
+        rawText: text, 
         date: targetDate,
         done: false,
         type: type
@@ -181,28 +167,20 @@ function addTodo() {
     document.getElementById('todoInput').value = '';
     saveData();
     
-    if(isTomorrow) {
-        showToast("已加入明日计划 (23:30后算明天)", "success");
-    }
+    if(isTomorrow) showToast("已加入明日计划", "success");
 }
 
-// ★ 任务 -> 提交区 跳转 ★
 function scrollToCommit(text, id) {
-    // 滚动
     const section = document.getElementById('submitSection');
     section.scrollIntoView({ behavior: 'smooth', block: 'center' });
     
-    // 高亮
     section.classList.add('highlight-pulse');
     setTimeout(() => section.classList.remove('highlight-pulse'), 1500);
     
-    // 填充
-    const cleanText = text || "";
-    document.getElementById('probName').value = cleanText;
-    document.getElementById('linkedTaskId').value = id; // 记录关联ID
-    
+    document.getElementById('probName').value = text || "";
+    document.getElementById('linkedTaskId').value = id; 
     document.getElementById('probName').focus();
-    showToast("已填充题目，AC后自动完成任务", "info");
+    showToast("AC后自动完成任务", "info");
 }
 
 function submitAC() {
@@ -212,18 +190,15 @@ function submitAC() {
     const solLink = document.getElementById('solLink').value;
     const linkedId = document.getElementById('linkedTaskId').value;
 
-    if(!name || !rVal) return showToast("请填写完整信息", "error");
+    if(!name || !rVal) return showToast("请填写完整", "error");
 
     const conf = RATINGS[rVal];
     if(parseInt(rVal)) appData.maxRating = Math.max(appData.maxRating, parseInt(rVal));
 
-    // ★ 联动结算逻辑 ★
     if (linkedId) {
-        // 如果有直接关联的任务ID，直接勾选
         const task = appData.todos.find(t => t.id == linkedId);
         if(task) task.done = true;
     } else {
-        // 否则尝试模糊匹配
         const match = appData.todos.find(t => t.text.includes(name) && !t.done);
         if(match) match.done = true;
     }
@@ -241,7 +216,6 @@ function submitAC() {
     const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
     if(nextLv > appData.level) { appData.level = nextLv; showToast(`🎉 升级啦 LV.${nextLv}`, "success"); }
 
-    // 重置表单
     document.getElementById('probName').value = '';
     document.getElementById('probLink').value = '';
     document.getElementById('solLink').value = '';
@@ -301,7 +275,7 @@ function processBatch() {
         saveData();
         closeModal('batchModal');
         document.getElementById('batchInput').value = "";
-        showToast(`⚡ 成功导入 ${count} 题！`, "success");
+        showToast(`⚡ 导入 ${count} 题`, "success");
         fireConfetti();
     } else { showToast("格式错误", "error"); }
 }
@@ -317,7 +291,6 @@ function renderUI() {
     document.getElementById('xpFill').style.width = `${Math.max(0, Math.min(pct, 100))}%`;
     document.getElementById('totalAC').innerText = appData.logs.length;
 
-    renderBadges();
     renderChart();
     renderTodos();
     renderHistory();
@@ -331,10 +304,8 @@ function renderTodos() {
     const list = document.getElementById('todoList');
     list.innerHTML = "";
     
-    // 显示今天及以后的任务
     const activeTodos = appData.todos.filter(t => t.date >= todayStr);
     
-    // 计算今日完成率
     const todayOnly = appData.todos.filter(t => t.date === todayStr);
     const doneCount = todayOnly.filter(t => t.done).length;
     const progress = todayOnly.length ? Math.round((doneCount/todayOnly.length)*100) : 0;
@@ -344,7 +315,7 @@ function renderTodos() {
     if(progress === 100 && todayOnly.length > 0) document.getElementById('dailyProgress').style.backgroundColor = "#10b981";
     else document.getElementById('dailyProgress').style.backgroundColor = currentTheme.p;
 
-    if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日任务已清空 / 尚未添加</div>`;
+    if(activeTodos.length === 0) list.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:20px;">今日无任务</div>`;
     
     activeTodos.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -352,7 +323,6 @@ function renderTodos() {
     });
 
     activeTodos.forEach(t => {
-        // ★ 生成联动按钮 ★
         const goBtn = !t.done ? 
             `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀</button>` 
             : '';
@@ -370,7 +340,7 @@ function renderHistory() {
     const histList = document.getElementById('historyList');
     histList.innerHTML = "";
     if(appData.history.length === 0) {
-        histList.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无历史数据</div>`;
+        histList.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无历史</div>`;
         return;
     }
     appData.history.slice(0, 7).forEach(h => {
@@ -389,7 +359,7 @@ function renderLogs() {
     const filteredLogs = appData.logs.filter(l => l.name.toLowerCase().includes(searchText));
     
     if(filteredLogs.length === 0 && !searchText) {
-        logBox.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无刷题记录</div>`;
+        logBox.innerHTML = `<div style="text-align:center;color:#999;font-size:0.8rem;padding:10px;">暂无记录</div>`;
         return;
     }
 
@@ -399,10 +369,9 @@ function renderLogs() {
         div.className = 'log-card';
         div.style.borderLeftColor = conf.color;
         
-        // ★ 双链接渲染 ★
         let links = '';
         if(l.link) links += `<a href="${escapeHtml(l.link)}" target="_blank" class="link-btn link-prob">📄 原题</a>`;
-        if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 题解</a>`;
+        if(l.sol) links += `<a href="${escapeHtml(l.sol)}" target="_blank" class="link-btn link-sol">📝 代码</a>`;
 
         div.innerHTML = `
             <div style="flex:1">
@@ -474,31 +443,19 @@ function renderChart() {
     }
 }
 
-function renderBadges() {
-    const badgeBox = document.getElementById('badgeGrid');
-    badgeBox.innerHTML = '';
-    BADGES.forEach(b => {
-        const unlocked = b.check(appData);
-        badgeBox.innerHTML += `<div class="badge ${unlocked?'unlocked':''}" data-title="${b.title}">${b.icon}</div>`;
-    });
-}
-
 function renderCountdowns() {
-    const container = document.getElementById('countdownList');
-    if(!container) return;
-    container.innerHTML = "";
-    const targets = appData.targets || [];
-    if (targets.length === 0) { 
-        container.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; 
+    const list = document.getElementById('countdownList');
+    if(!list) return;
+    list.innerHTML = "";
+    if (!appData.targets || appData.targets.length === 0) { 
+        list.innerHTML = "<div style='text-align:center; color:#999; font-size:0.8rem;'>暂无比赛日程</div>"; 
         return; 
     }
-    targets.forEach((t, idx) => {
-        const targetDate = new Date(t.date);
-        const now = new Date();
-        const diff = Math.ceil((targetDate - now) / 86400000);
+    appData.targets.forEach((t) => {
+        const diff = Math.ceil((new Date(t.date) - new Date()) / 86400000);
         const urgentClass = (diff <= 7 && diff >= 0) ? 'urgent' : '';
         const dayText = diff >= 0 ? `${diff} 天` : '已结束';
-        container.innerHTML += `
+        list.innerHTML += `
         <div class="cd-row">
             <span class="cd-name">${escapeHtml(t.name)}</span>
             <span class="cd-days ${urgentClass}">${dayText}</span>
@@ -518,7 +475,7 @@ function renderTargetList() {
     });
 }
 
-// --- 辅助工具 (无缺失版) ---
+// --- 工具函数 ---
 
 function openModal(id) {
     const el = document.getElementById(id);
@@ -533,7 +490,6 @@ function closeModal(id) {
     if(el) el.classList.remove('show');
 }
 
-// 优雅删除：唤起确认弹窗
 function requestDelete(type, id) {
     pendingDeleteAction = () => {
         if(type === 'todo') deleteTodo(id);
@@ -544,10 +500,7 @@ function requestDelete(type, id) {
 
 function toggleTodo(id) {
     const todo = appData.todos.find(t => t.id === id);
-    if(todo) {
-        todo.done = !todo.done;
-        saveData();
-    }
+    if(todo) { todo.done = !todo.done; saveData(); }
 }
 
 function deleteTodo(id) {
@@ -572,17 +525,13 @@ function addTarget() {
     if(!name || !date) return showToast("请填写完整信息", "error");
     if(!appData.targets) appData.targets = [];
     appData.targets.push({ name, date });
-    saveData();
-    renderTargetList();
-    renderCountdowns();
+    saveData(); renderTargetList(); renderCountdowns();
     document.getElementById('newTargetName').value = "";
 }
 
 function removeTarget(idx) {
     appData.targets.splice(idx, 1);
-    saveData();
-    renderTargetList();
-    renderCountdowns();
+    saveData(); renderTargetList(); renderCountdowns();
 }
 
 function toggleTheme() {
@@ -612,8 +561,7 @@ function updateQuote() {
     if(!elC) return;
     elC.style.opacity = 0; elA.style.opacity = 0;
     setTimeout(() => {
-        elC.innerText = q.t;
-        elA.innerText = `—— ${q.a}`;
+        elC.innerText = q.t; elA.innerText = `—— ${q.a}`;
         elC.style.opacity = 1; elA.style.opacity = 1;
     }, 300);
 }
@@ -632,10 +580,7 @@ function loadData() {
     } catch(e) { console.error("Load Data Error"); }
 }
 
-function saveData() {
-    localStorage.setItem(DB_KEY, JSON.stringify(appData));
-    renderUI();
-}
+function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(appData)); renderUI(); }
 
 function loadTimer() {
     try {
@@ -693,11 +638,11 @@ function updateTimerUI(isRunning) {
     const btn = document.getElementById('timerBtn');
     const status = document.getElementById('timerStatus');
     if (isRunning) {
-        btn.innerText = "⏸️ 暂停 (Clock Out)";
+        btn.innerText = "⏸️ 暂停";
         btn.classList.remove('start'); btn.classList.add('stop');
         status.innerText = "🔥 专注中"; status.classList.remove('offline'); status.classList.add('online');
     } else {
-        btn.innerText = "🚀 开始专注 (Clock In)";
+        btn.innerText = "🚀 开始专注";
         btn.classList.remove('stop'); btn.classList.add('start');
         status.innerText = "😴 休息中"; status.classList.remove('online'); status.classList.add('offline');
     }
@@ -723,7 +668,7 @@ function importData(input) {
     reader.onload = function(e) {
         try {
             const json = JSON.parse(e.target.result);
-            if(confirm("确定要覆盖当前记录吗？")) {
+            if(confirm("确定覆盖吗？")) {
                 appData = json;
                 saveData();
                 showToast("读档成功！", "success");
