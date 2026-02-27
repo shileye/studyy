@@ -93,6 +93,22 @@ window.onload = () => {
         loadTimer();
         checkDailySettlement();
         renderUI();
+
+        // ⚡ =============== 新增：空间跃迁接收器 =============== ⚡
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('auto_ac')) {
+            const autoData = urlParams.get('auto_ac');
+            // 直接借用你原本的“极速入库”输入框，神不知鬼不觉地塞进去
+            const batchBox = document.getElementById('batchInput');
+            if (batchBox) {
+                batchBox.value = autoData;
+                // 瞬间触发批量入库函数！
+                processBatch(); 
+            }
+            // 杀人诛心：擦除网址里的密码，防止你一刷新网页又重复添加一遍
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        // ⚡ ==================================================== ⚡
         
         setInterval(() => {
             const now = new Date();

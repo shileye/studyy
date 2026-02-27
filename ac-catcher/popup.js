@@ -8,32 +8,30 @@ document.getElementById('catchBtn').addEventListener('click', async () => {
      if (results && results[0] && results[0].result) {
          let data = results[0].result;
          
-         // 拼装成看板认得的新格式： 分数 题目标题 | 网址
+         // 拼装你的数据
          let finalString = data.rating + " " + data.title + " | " + data.url;
          
-         navigator.clipboard.writeText(finalString).then(() => {
-             document.getElementById('status').innerText = "✅ 捕获成功：\n" + data.title;
-         }).catch(err => {
-             document.getElementById('status').innerText = "❌ 复制失败: " + err;
-         });
+         // 🚀 核心魔法：向你的真实看板网址发起空间跃迁！
+         let targetUrl = "https://shileye.github.io/studyy/?auto_ac=" + encodeURIComponent(finalString);
+         
+         // 瞬间打开新标签页！
+         chrome.tabs.create({ url: targetUrl });
+         
+         document.getElementById('status').innerText = "🚀 跃迁成功！";
      }
   });
 });
 
-// 在网页内执行的全能特工
+// 网页内收集特工
 function scrapeProblemData() {
    let currentUrl = window.location.href;
    let title = document.title;
-   let rating = "1200"; // 默认分
+   let rating = "1200";
 
-   // 🔴 剧本 A：如果发现是在【牛客网】
    if (currentUrl.includes("nowcoder.com")) {
-       rating = "unrated"; // 牛客比赛一律打上 unrated 标签
-       // 牛客的网页标题通常是 "小红的数组_牛客网"，我们把后面的切掉
+       rating = "unrated";
        title = document.title.split('_')[0].trim();
-   } 
-   // 🔵 剧本 B：如果是在【Codeforces】
-   else if (currentUrl.includes("codeforces.com")) {
+   } else if (currentUrl.includes("codeforces.com")) {
        let cfTitleNode = document.querySelector('.problem-statement .title');
        if (cfTitleNode) {
            title = cfTitleNode.innerText.split('\n')[0].trim().replace('.', ' -');
@@ -41,8 +39,6 @@ function scrapeProblemData() {
            let match = document.body.innerText.match(/(?:^|\n)\s*([A-Z]\.\s+[^\n]{2,80})/);
            if (match) title = match[1].trim().replace('.', ' -');
        }
-       
-       // 智能估分
        let letterMatch = title.match(/^([A-Z])/);
        if (letterMatch) {
            let l = letterMatch[1];
@@ -53,7 +49,5 @@ function scrapeProblemData() {
            else if(l==='F'||l==='G') rating = "2200";
        }
    }
-
-   // 连锅端：返回标题、网址和算好的分数
    return { title: title, url: currentUrl, rating: rating };
 }
