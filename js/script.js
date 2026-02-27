@@ -973,3 +973,92 @@ function showToast(msg, type = 'info') {
         setTimeout(() => el.remove(), 300);
     }, 3000);
 }
+// ================= 赛博雷达：CF 官方 API 对接 =================
+async function syncCodeforces() {
+    // 1. 第一次用会问你账号，之后就自动记住了
+    let handle = localStorage.getItem('cf_handle');
+    if (!handle) {
+        handle = prompt("📡 首次连接雷达，请输入你的 Codeforces ID (例如: shileye666)：");
+        if (!handle) return;
+        localStorage.setItem('cf_handle', handle);
+    }
+
+    showToast(`正在扫描 ${handle} 的战绩...`, "info");
+
+    try {
+        // 2. 调用 CF 官方接口，抓取你最近的 30 条提交
+        const res = await fetch(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=30`);
+        const data = await res.json();
+
+        if (data.status !== "OK") {
+            return showToast("同步失败，请检查 ID 是否正确", "error");
+        }
+
+        let newAcCount = 0;
+        const subs = data.result;
+
+        // 3. 从旧到新遍历，只挑出 Accepted 的题
+        for (let i = subs.length - 1; i >= 0; i--) {
+            const sub = subs[i];
+            if (sub.verdict === "OK") {
+                const prob = sub.problem;
+                const rawName = `${prob.index} - ${prob.name}`;
+                
+                // 🛡️ 绝对防御：防止重复添加！检查这个题目是不是已经在记录里了
+                const isExist = appData.logs.some(l => l.name.includes(prob.name));
+                if (isExist) continue; // 如果已经记录过，直接跳过
+
+                // 🧠 智能估分引擎：有官方 Rating 就用，没有就盲猜
+                let rVal = "1200"; 
+                if (prob.rating) {
+                    const r = prob.rating;
+                    if (r >= 2200) rVal = "2200";
+                    else if (r >= 2000) rVal = "2000";
+                    else if (r >= 1750) rVal = "1750";
+                    else if (r >= 1500) rVal = "1500";
+                } else {
+                    const l = prob.index.charAt(0);
+                    if(l==='C') rVal = "1500";
+                    else if(l==='D') rVal = "1750";
+                    else if(l==='E') rVal = "2000";
+                    else if(l==='F'||l==='G') rVal = "2200";
+                }
+
+                // 🔗 自动生成原题传送门
+                const link = `https://codeforces.com/contest/${prob.contestId}/problem/${prob.index}`;
+                
+                // 📅 精准转换 CF 的时间戳
+                const dateObj = new Date(sub.creationTimeSeconds * 1000);
+                const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+
+                const conf = RATINGS[rVal] || RATINGS["1200"];
+                appData.logs.unshift({
+                    id: sub.id, // 用 CF 的提交 ID 做唯一标识
+                    date: dateStr,
+                    name: rawName,
+                    ratingVal: rVal,
+                    link: link,
+                    sol: "",
+                    xp: conf.xp
+                });
+                appData.xp += conf.xp;
+                newAcCount++;
+            }
+        }
+
+        // 4. 结算收尾
+        if (newAcCount > 0) {
+            const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1;
+            if (nextLv > appData.level) { appData.level = nextLv; }
+            saveData();
+            showToast(`🎉 雷达同步完成！自动捕获 ${newAcCount} 道新 AC`, "success");
+            fireConfetti();
+        } else {
+            showToast("⚡ 扫描完毕，暂无遗漏的新 AC", "info");
+        }
+
+    } catch (err) {
+        console.error(err);
+        showToast("网络请求失败，请稍后再试", "error");
+    }
+}
