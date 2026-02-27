@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "决战时刻 AC 捕获器",
+  "version": "1.0",
+  "description": "一键抓取比赛题目，极客专属！",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab", "scripting"]
+}
