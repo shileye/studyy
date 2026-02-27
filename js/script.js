@@ -1004,44 +1004,52 @@ async function syncCodeforces() {
                 const prob = sub.problem;
                 const rawName = `${prob.index} - ${prob.name}`;
                 
-                // 🛡️ 绝对防御：防止重复添加！检查这个题目是不是已经在记录里了
+                // 🛡️ 绝对防御：防止重复添加
                 const isExist = appData.logs.some(l => l.name.includes(prob.name));
-                if (isExist) continue; // 如果已经记录过，直接跳过
+                if (isExist) continue; 
 
-                // 🧠 智能估分引擎：有官方 Rating 就用，没有就盲猜
+                // 🧠 动态计分引擎：优先同步官方 Rating
                 let rVal = "1200"; 
+                let finalXp = 20;
+
                 if (prob.rating) {
+                    // 如果官方有 Rating (例如 1400)，直接作为分类
                     const r = prob.rating;
+                    finalXp = Math.floor(r / 40); // 经验公式：Rating越高XP越高 (例如1600分=40XP)
+                    
+                    // 映射到你的雷达图分类
                     if (r >= 2200) rVal = "2200";
                     else if (r >= 2000) rVal = "2000";
                     else if (r >= 1750) rVal = "1750";
                     else if (r >= 1500) rVal = "1500";
+                    else rVal = "1200";
                 } else {
-                    const l = prob.index.charAt(0);
-                    if(l==='C') rVal = "1500";
-                    else if(l==='D') rVal = "1750";
-                    else if(l==='E') rVal = "2000";
-                    else if(l==='F'||l==='G') rVal = "2200";
+                    // 针对刚打完还没出 Rating 的新题 (Unrated)
+                    const level = prob.index.charAt(0);
+                    if (['A', 'B'].includes(level)) { rVal = "1200"; finalXp = 15; }
+                    else if (level === 'C') { rVal = "1500"; finalXp = 25; }
+                    else if (level === 'D') { rVal = "1750"; finalXp = 35; }
+                    else { rVal = "2000"; finalXp = 45; }
                 }
 
                 // 🔗 自动生成原题传送门
                 const link = `https://codeforces.com/contest/${prob.contestId}/problem/${prob.index}`;
                 
-                // 📅 精准转换 CF 的时间戳
+                // 📅 转换时间
                 const dateObj = new Date(sub.creationTimeSeconds * 1000);
                 const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 
-                const conf = RATINGS[rVal] || RATINGS["1200"];
+                // 写入记录
                 appData.logs.unshift({
-                    id: sub.id, // 用 CF 的提交 ID 做唯一标识
+                    id: sub.id,
                     date: dateStr,
                     name: rawName,
                     ratingVal: rVal,
                     link: link,
                     sol: "",
-                    xp: conf.xp
+                    xp: finalXp
                 });
-                appData.xp += conf.xp;
+                appData.xp += finalXp;
                 newAcCount++;
             }
         }
@@ -1060,5 +1068,64 @@ async function syncCodeforces() {
     } catch (err) {
         console.error(err);
         showToast("网络请求失败，请稍后再试", "error");
+    }
+}
+// ================= AtCoder 官方 API 对接 =================
+async function syncAtCoder() {
+    let handle = localStorage.getItem('at_handle');
+    if (!handle) {
+        handle = prompt("🇯🇵 请输入你的 AtCoder ID：");
+        if (!handle) return;
+        localStorage.setItem('at_handle', handle);
+    }
+
+    showToast(`正在扫描 AtCoder: ${handle}...`, "info");
+
+    try {
+        // 使用 Kenkoooo API 抓取提交记录
+        const res = await fetch(`https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user=${handle}&from_second=${Math.floor(Date.now()/1000) - 86400 * 7}`);
+        const data = await res.json();
+
+        let newAcCount = 0;
+        // 过滤出 Accepted (AC) 的题目
+        const acSubs = data.filter(s => s.result === "AC");
+
+        for (const sub of acSubs) {
+            const isExist = appData.logs.some(l => l.name.includes(sub.problem_id));
+            if (isExist) continue;
+
+            // ABC 难度估分逻辑
+            let rVal = "1200"; 
+            let xp = 20;
+            const probId = sub.problem_id;
+            if (probId.includes('_c')) { rVal = "1500"; xp = 35; }
+            else if (probId.includes('_d')) { rVal = "1750"; xp = 50; }
+            else if (probId.includes('_e')) { rVal = "2000"; xp = 80; }
+
+            const dateObj = new Date(sub.epoch_second * 1000);
+            const dateStr = dateObj.toISOString().split('T')[0];
+
+            appData.logs.unshift({
+                id: `at-${sub.id}`,
+                date: dateStr,
+                name: `ABC - ${sub.problem_id.toUpperCase()}`,
+                ratingVal: rVal,
+                link: `https://atcoder.jp/contests/${sub.contest_id}/tasks/${sub.problem_id}`,
+                sol: "",
+                xp: xp
+            });
+            appData.xp += xp;
+            newAcCount++;
+        }
+
+        if (newAcCount > 0) {
+            saveData();
+            showToast(`🎉 ABC 同步完成！新增 ${newAcCount} 条记录`, "success");
+            fireConfetti();
+        } else {
+            showToast("🍵 AtCoder 暂无新 AC", "info");
+        }
+    } catch (err) {
+        showToast("AtCoder API 连接超时", "error");
     }
 }
