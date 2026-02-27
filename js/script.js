@@ -197,10 +197,19 @@ function toggleCommitArea() {
     }
 }
 
+// 🎯 魔改升级：支持智能抓取链接的添加任务
 function addTodo() {
-    const text = document.getElementById('todoInput').value;
+    const textRaw = document.getElementById('todoInput').value;
     const type = document.getElementById('todoType').value;
-    if(!text) return showToast("请输入内容", "error");
+    if(!textRaw) return showToast("请输入内容", "error");
+
+    // 用正则自动找出粘贴内容里的网址
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const extractedLinks = textRaw.match(urlRegex);
+    const link = extractedLinks ? extractedLinks[0] : "";
+    
+    // 把链接从文字里剔除，保持任务名字清爽
+    const cleanText = textRaw.replace(urlRegex, '').trim() || "未命名任务";
 
     const targetDate = getTaskTargetDate(); 
     const isTomorrow = targetDate !== getRealDate();
@@ -212,8 +221,9 @@ function addTodo() {
 
     appData.todos.push({
         id: Date.now(),
-        text: `${displayPrefix}${icon} ${text}`,
-        rawText: text, 
+        text: `${displayPrefix}${icon} ${cleanText}`,
+        rawText: cleanText, 
+        link: link, // 把抓到的链接存起来！
         date: targetDate,
         done: false,
         type: type
@@ -322,7 +332,7 @@ function processBatch() {
             } else { continue; }
         }
 
-        // ✨ 神奇的拆分魔法：如果有 | 竖线，就把名字和链接拆开 ✨
+        // 神奇的拆分魔法：如果有 | 竖线，就把名字和链接拆开
         let finalName = rawName;
         let finalLink = "";
         if (rawName.includes("|")) {
@@ -337,7 +347,7 @@ function processBatch() {
             date: getRealDate(),
             name: finalName,
             ratingVal: validKey,
-            link: finalLink, // 这里把抓到的链接存进去了！
+            link: finalLink, 
             sol: "", 
             xp: config.xp
         });
@@ -376,9 +386,10 @@ function renderUI() {
     renderLogs();
     renderCountdowns();
     renderHeatmap();
-    renderCalendar(); // 回归的日历渲染
+    renderCalendar(); 
 }
 
+// 🎯 魔改升级：渲染带传送门链接的任务列表
 function renderTodos() {
     const todayStr = getRealDate();
     const list = document.getElementById('todoList');
@@ -407,15 +418,23 @@ function renderTodos() {
     });
 
     activeTodos.forEach(t => {
-        const goBtn = !t.done ? 
-            `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">🚀</button>` 
+        const goAcBtn = !t.done ? 
+            `<button class="btn-go-ac" onclick="scrollToCommit('${escapeHtml(t.rawText)}', ${t.id})">✅ 提交</button>` 
+            : '';
+            
+        // 如果有链接而且还没做完，就显示传送门按钮！
+        const goProbBtn = (!t.done && t.link) ? 
+            `<a href="${escapeHtml(t.link)}" target="_blank" class="btn-go-ac" style="text-decoration:none; background:var(--primary); color:white;">🔗 传送</a>` 
             : '';
 
         list.innerHTML += `
         <div class="todo-item ${t.done?'done':''} ${t.type==='赛'?'type-race':''}">
             <div style="flex:1; cursor:pointer;" onclick="toggleTodo(${t.id})">${escapeHtml(t.text)}</div>
-            ${goBtn}
-            <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span>
+            <div style="display:flex; gap: 8px; align-items: center;">
+                ${goProbBtn}
+                ${goAcBtn}
+                <span class="btn-del" onclick="requestDelete('todo', ${t.id})">✕</span>
+            </div>
         </div>`;
     });
 }
