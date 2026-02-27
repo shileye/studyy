@@ -6,11 +6,9 @@ document.getElementById('catchBtn').addEventListener('click', async () => {
     function: scrapeProblemName
   }, (results) => {
      if (results && results[0] && results[0].result) {
-         // 拼装格式
          let finalString = "1200 " + results[0].result;
          
-         // 核心修复：我们在 popup（插件弹窗）的环境里执行复制！
-         // 因为弹窗目前是你鼠标点击聚焦的地方，浏览器绝不会拦截它！
+         // 在插件环境执行复制，绝对不会被浏览器拦截！
          navigator.clipboard.writeText(finalString).then(() => {
              document.getElementById('status').innerText = "✅ 复制成功：\n" + finalString;
          }).catch(err => {
@@ -20,16 +18,22 @@ document.getElementById('catchBtn').addEventListener('click', async () => {
   });
 });
 
-// 这个函数只负责在页面里当“间谍”找名字，不负责复制
+// 在网页内部执行的“王牌特工”
 function scrapeProblemName() {
-   // 按横杠分割标题：["Problem ", " B ", " Simons... ", " Codeforces"]
-   let parts = document.title.split('-');
+   // 1. 终极杀招：无视标签页，直接去网页深处抓取包含题目的 HTML 元素！
+   // Codeforces 的题目大标题，永远藏在 class 为 title 的盒子里
+   let cfTitleNode = document.querySelector('.problem-statement .title');
    
-   // 如果是 CF 典型的 4 段式标题，我们就把题号和题目名拼起来
+   if (cfTitleNode) {
+       // 抓出来的内容通常是 "B. Simons and Cakes for Success"
+       // 我们贴心地把第一个点号替换成 " - "，变成你喜欢的格式
+       return cfTitleNode.innerText.replace('.', ' -');
+   }
+   
+   // 2. 备用方案：如果没找到 DOM（比如你在别的网站），再降级去切分标题
+   let parts = document.title.split('-');
    if (parts.length >= 3) {
        return parts[1].trim() + " - " + parts[2].trim();
    }
-   
-   // 如果格式不对，就直接返回整个标题
    return document.title.trim();
 }
