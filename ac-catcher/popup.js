@@ -3,12 +3,16 @@ document.getElementById('catchBtn').addEventListener('click', async () => {
   
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    function: scrapeProblemName
+    function: scrapeProblemData
   }, (results) => {
      if (results && results[0] && results[0].result) {
-         let finalString = "1200 " + results[0].result;
+         let data = results[0].result;
+         
+         // 拼装成看板认得的新格式： 分数 题目标题 | 网址
+         let finalString = data.rating + " " + data.title + " | " + data.url;
+         
          navigator.clipboard.writeText(finalString).then(() => {
-             document.getElementById('status').innerText = "✅ 复制成功：\n" + finalString;
+             document.getElementById('status').innerText = "✅ 捕获成功：\n" + data.title;
          }).catch(err => {
              document.getElementById('status').innerText = "❌ 复制失败: " + err;
          });
@@ -16,33 +20,40 @@ document.getElementById('catchBtn').addEventListener('click', async () => {
   });
 });
 
-// 无视任何防御的终极雷达扫描
-function scrapeProblemName() {
-   // 1. 常规探路：如果没装其他插件，走这条路最快
-   let cfTitleNode = document.querySelector('.problem-statement .title');
-   if (cfTitleNode && cfTitleNode.innerText.trim()) {
-       let text = cfTitleNode.innerText.trim().split('\n')[0]; // 取第一行，避开翻译
-       if (text.length > 2) return text.replace('.', ' -');
+// 在网页内执行的全能特工
+function scrapeProblemData() {
+   let currentUrl = window.location.href;
+   let title = document.title;
+   let rating = "1200"; // 默认分
+
+   // 🔴 剧本 A：如果发现是在【牛客网】
+   if (currentUrl.includes("nowcoder.com")) {
+       rating = "unrated"; // 牛客比赛一律打上 unrated 标签
+       // 牛客的网页标题通常是 "小红的数组_牛客网"，我们把后面的切掉
+       title = document.title.split('_')[0].trim();
+   } 
+   // 🔵 剧本 B：如果是在【Codeforces】
+   else if (currentUrl.includes("codeforces.com")) {
+       let cfTitleNode = document.querySelector('.problem-statement .title');
+       if (cfTitleNode) {
+           title = cfTitleNode.innerText.split('\n')[0].trim().replace('.', ' -');
+       } else {
+           let match = document.body.innerText.match(/(?:^|\n)\s*([A-Z]\.\s+[^\n]{2,80})/);
+           if (match) title = match[1].trim().replace('.', ' -');
+       }
+       
+       // 智能估分
+       let letterMatch = title.match(/^([A-Z])/);
+       if (letterMatch) {
+           let l = letterMatch[1];
+           if(l==='A'||l==='B') rating = "1200";
+           else if(l==='C') rating = "1500";
+           else if(l==='D') rating = "1750";
+           else if(l==='E') rating = "2000";
+           else if(l==='F'||l==='G') rating = "2200";
+       }
    }
-   
-   // 2. 终极雷达：针对 Codeforces Better 等插件的强杀逻辑！
-   // 第一步：从浏览器网址里抠出当前的题号，比如 "B" 或者 "D2"
-   let matchUrl = window.location.href.match(/problem\/([A-Z]\d*)/i);
-   let letter = matchUrl ? matchUrl[1].toUpperCase() : "[A-Z]\\d*";
-   
-   // 第二步：在全屏所有的可见文字里，死死锁定 "B. 任何英文" 这样的格式
-   let regex = new RegExp(`(?:^|\\n)\\s*(${letter}\\.\\s+[^\\n]{2,80})`);
-   let match = document.body.innerText.match(regex);
-   
-   if (match && match[1]) {
-       // 抓到后，把那个点替换成横杠，完美输出！
-       return match[1].trim().replace('.', ' -');
-   }
-   
-   // 3. 最后的兜底
-   let parts = document.title.split('-');
-   if (parts.length >= 3 && parts[2].trim() !== "Codeforces") {
-       return parts[1].trim() + " - " + parts[2].trim();
-   }
-   return document.title.trim();
+
+   // 连锅端：返回标题、网址和算好的分数
+   return { title: title, url: currentUrl, rating: rating };
 }

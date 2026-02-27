@@ -302,11 +302,11 @@ function processBatch() {
         
         let match = line.match(/^(\d+)\s+(.+)$/);
         let validKey = "1200"; 
-        let name = "";
+        let rawName = "";
 
         if (match) {
             const num = parseInt(match[1]);
-            name = match[2];
+            rawName = match[2];
             if (num >= 2200) validKey = "2200";
             else if (num >= 2000) validKey = "2000";
             else if (num >= 1750) validKey = "1750";
@@ -314,21 +314,30 @@ function processBatch() {
             else validKey = "1200";
             appData.maxRating = Math.max(appData.maxRating, num);
         } else {
-            const charMatch = line.match(/^([红橙黄绿蓝紫黑])\s+(.+)$/);
+            const charMatch = line.match(/^([红橙黄绿蓝紫黑]|unrated)\s+(.+)$/);
             if (charMatch) {
-                const colorMap = {'红':'luogu_red', '橙':'luogu_orange', '黄':'luogu_yellow', '绿':'luogu_green', '蓝':'luogu_blue', '紫':'luogu_purple', '黑':'luogu_black'};
-                validKey = colorMap[charMatch[1]] || "1200";
-                name = charMatch[2];
+                const colorMap = {'红':'luogu_red', '橙':'luogu_orange', '黄':'luogu_yellow', '绿':'luogu_green', '蓝':'luogu_blue', '紫':'luogu_purple', '黑':'luogu_black', 'unrated':'unrated'};
+                validKey = colorMap[charMatch[1]] || "unrated";
+                rawName = charMatch[2];
             } else { continue; }
         }
 
-        const config = RATINGS[validKey];
+        // ✨ 神奇的拆分魔法：如果有 | 竖线，就把名字和链接拆开 ✨
+        let finalName = rawName;
+        let finalLink = "";
+        if (rawName.includes("|")) {
+            let splitParts = rawName.split("|");
+            finalName = splitParts[0].trim();
+            finalLink = splitParts[1].trim();
+        }
+
+        const config = RATINGS[validKey] || RATINGS["unrated"];
         appData.logs.unshift({
             id: Date.now() + i, 
             date: getRealDate(),
-            name: name,
+            name: finalName,
             ratingVal: validKey,
-            link: "", 
+            link: finalLink, // 这里把抓到的链接存进去了！
             sol: "", 
             xp: config.xp
         });
