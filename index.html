@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 V15.2</title>
+    <title>ICPC 2026 // 决战时刻 V16.0 狂暴版</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://gs.jurieo.com/gemini/fonts-googleapis/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -44,7 +44,7 @@
 
 <div class="modal" id="batchModal">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>⚡ 极速入库</h3>
+        <h3>⚡ 极速入库 (默认计入"思维")</h3>
         <p class="hint-text">格式：<code>1600 题目名</code> 或 <code>蓝 P1001 A+B</code></p>
         <textarea id="batchInput" class="batch-textarea" rows="8" placeholder="粘贴内容..."></textarea>
         <div class="input-row">
@@ -85,7 +85,7 @@
             </svg>
         </div>
         <div class="ac-text">AC Accepted!</div>
-        <div class="ac-subtext">太强了！继续保持！</div>
+        <div class="ac-subtext" id="acSubtext">太强了！继续保持！</div>
     </div>
 </div>
 
@@ -182,7 +182,7 @@
     <main class="main-content">
         <div class="card">
             <div class="section-header">
-                <h3 class="section-title">📜 今日计划 (To-Do)</h3>
+                <h3 class="section-title">📜 今日计划 & 耻辱柱</h3>
                 <span class="date-badge" id="currentDateDisplay">Loading...</span>
             </div>
             <div class="progress-container">
@@ -193,7 +193,7 @@
                 <select id="todoType" style="flex:1;">
                     <option value="题">📖 刷题</option>
                     <option value="赛">🏆 比赛/VP</option>
-                    <option value="学">🧠 补题</option>
+                    <option value="学" style="color:var(--danger); font-weight:bold;">🩸 补题(x3 EXP)</option>
                 </select>
                 <input type="text" id="todoInput" placeholder="输入任务 (点击 Go 去提交 AC)" style="flex:4;">
                 <button class="btn btn-primary" onclick="addTodo()">添加</button>
@@ -204,9 +204,9 @@
 
         <div class="card commit-card" id="submitSection" style="display:none;">
             <h3 class="section-title">⚔️ 提交代码 (Commit)</h3>
-            <div class="input-grid">
+            <div class="input-grid" style="grid-template-columns: 1fr 1fr;">
                 <select id="ratingSelect">
-                    <option disabled selected>--- CF Rating ---</option>
+                    <option disabled selected>--- 难度评级 ---</option>
                     <option value="1200">Newbie (1200+)</option>
                     <option value="1500">Pupil (1400+)</option>
                     <option value="1750">Specialist (1600+)</option>
@@ -222,14 +222,25 @@
                     <option disabled>--- 其他 ---</option>
                     <option value="unrated">❓ 未知/比赛中</option>
                 </select>
-                <input type="text" id="probName" placeholder="题目名称">
+                <select id="topicSelect" style="border-color: var(--primary);">
+                    <option disabled selected>--- 🎯 科技树归属 ---</option>
+                    <option value="0">🧩 思维 / 贪心 / 构造</option>
+                    <option value="1">🌲 数据结构</option>
+                    <option value="2">🕸️ 图论</option>
+                    <option value="3">🧮 数学 / 数论</option>
+                    <option value="4">💡 动态规划 (DP)</option>
+                    <option value="5">🔤 字符串</option>
+                </select>
+            </div>
+            <div class="input-grid" style="margin-top:10px; grid-template-columns: 1fr;">
+                <input type="text" id="probName" placeholder="题目名称 (必填)">
             </div>
             <div class="input-grid" style="margin-top:10px;">
                 <input type="text" id="probLink" placeholder="🔗 原题链接">
                 <input type="text" id="solLink" placeholder="📝 题解链接">
             </div>
             <input type="hidden" id="linkedTaskId" value="">
-            <button class="btn btn-primary full-width" style="margin-top:15px;" onclick="submitAC()">✅ 确认 AC</button>
+            <button class="btn btn-primary full-width" style="margin-top:15px; font-size:1.1rem;" onclick="submitAC()">✅ 斩杀提交！</button>
             <button onclick="syncCodeforces()" style="background: var(--primary); color: white; padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;">
                 📡 一键同步 CF 战绩
             </button>
@@ -243,7 +254,8 @@
                 <h3 class="section-title">📚 历史结算</h3>
                 <div id="historyList" class="history-list"></div>
             </div>
-            <div class="card" style="margin-bottom:0; display:flex; align-items:center; justify-content:center;">
+            <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <h3 class="section-title" style="width:100%; text-align:left;">🕸️ 核心科技树</h3>
                 <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
             </div>
         </div>
@@ -269,7 +281,7 @@
         <div id="tplList" class="tpl-list"></div>
     </div>
 
-    <div class="footer-msg">你要考虑这是不是你此生仅有的机会。</div>
+    <div class="footer-msg">没有痛感，就没有成长。不要逃避你的短板。</div>
 </div>
 
 <script src="js/script.js"></script>
