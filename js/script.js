@@ -93,6 +93,7 @@ window.onload = () => {
         loadTimer();
         checkDailySettlement();
         renderUI();
+        renderTemplates();
 
         // ⚡ =============== 新增：空间跃迁接收器 =============== ⚡
         const urlParams = new URLSearchParams(window.location.search);
@@ -1128,4 +1129,117 @@ async function syncAtCoder() {
     } catch (err) {
         showToast("AtCoder API 连接超时", "error");
     }
+}
+// ================= 边缘武器库 (板子抽屉) =================
+// 可以在这里随意增删你的个人常用模板！注意用反引号（Esc下面的键）包裹代码
+const TEMPLATES =[
+    {
+        id: 'tpl-1',
+        name: "🚀 C++ 缺省源",
+        desc: "头文件 + 快读快写 + 常用宏",
+        code: `#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int INF = 0x3f3f3f3f;
+
+inline int read() {
+    int x=0,f=1;char c=getchar();
+    while(c<'0'||c>'9'){if(c=='-')f=-1;c=getchar();}
+    while(c>='0'&&c<='9'){x=(x<<1)+(x<<3)+(c^48);c=getchar();}
+    return x*f;
+}
+
+void solve() {
+    // Write your code here...
+    
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t = 1;
+    // cin >> t;
+    while(t--) solve();
+    return 0;
+}`
+    },
+    {
+        id: 'tpl-2',
+        name: "🌲 线段树 (区间加+区间和)",
+        desc: "1-indexed, lazy tag",
+        code: `// 这里替换成你的线段树板子
+const int N = 1e5 + 5;
+struct Node {
+    int l, r;
+    ll sum, add;
+} tr[N * 4];
+
+void pushup(int u) {
+    tr[u].sum = tr[u<<1].sum + tr[u<<1|1].sum;
+}
+
+void pushdown(int u) {
+    // ...
+}`
+    },
+    {
+        id: 'tpl-3',
+        name: "🔗 并查集 (DSU)",
+        desc: "路径压缩 + 按秩合并",
+        code: `const int N = 1e5 + 5;
+int p[N], sz[N];
+
+int find(int x) {
+    if (p[x] != x) p[x] = find(p[x]);
+    return p[x];
+}
+
+void merge(int x, int y) {
+    int px = find(x), py = find(y);
+    if (px == py) return;
+    if (sz[px] < sz[py]) swap(px, py);
+    p[py] = px;
+    sz[px] += sz[py];
+}`
+    }
+];
+
+// 开关抽屉
+function toggleDrawer() {
+    const drawer = document.getElementById('tplDrawer');
+    if (drawer) drawer.classList.toggle('open');
+}
+
+// 渲染模板列表
+function renderTemplates() {
+    const list = document.getElementById('tplList');
+    if (!list) return;
+    list.innerHTML = '';
+    TEMPLATES.forEach(t => {
+        list.innerHTML += `
+            <div class="tpl-item">
+                <div class="tpl-header">
+                    <span>${t.name}</span>
+                    <button class="btn-copy" onclick="copyTemplate('${t.id}')">✂️ 复制</button>
+                </div>
+                <p class="tpl-desc">${t.desc}</p>
+            </div>
+        `;
+    });
+}
+
+// 核心魔法：无感复制到系统剪贴板
+function copyTemplate(id) {
+    const tpl = TEMPLATES.find(t => t.id === id);
+    if (!tpl) return;
+    
+    // 现代浏览器 Clipboard API
+    navigator.clipboard.writeText(tpl.code).then(() => {
+        showToast("✅ 已复制到剪贴板：" + tpl.name, "success");
+        // 复制完自动收起抽屉，不挡视线！
+        toggleDrawer(); 
+    }).catch(err => {
+        console.error('复制失败:', err);
+        showToast("❌ 复制失败，请检查浏览器权限", "error");
+    });
 }
