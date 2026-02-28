@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICPC 2026 // 决战时刻 V15.1</title>
+    <title>ICPC 2026 // 决战时刻 V15.2</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://gs.jurieo.com/gemini/fonts-googleapis/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -54,6 +54,19 @@
     </div>
 </div>
 
+<div class="modal" id="tplModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 class="section-title">✨ 收录新模板 / AC代码</h3>
+        <input type="text" id="tplNameInput" placeholder="模板名称 (如：线段树、图论DFS板子)" style="margin-bottom:10px;">
+        <input type="text" id="tplDescInput" placeholder="📝 题目链接 / 核心思路备注" style="margin-bottom:10px;">
+        <textarea id="tplCodeInput" rows="10" placeholder="粘贴你的 AC 代码..." style="font-family:'JetBrains Mono'; resize:vertical; width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-main);"></textarea>
+        <div class="input-grid" style="margin-top:15px;">
+            <button class="btn btn-outline" onclick="closeModal('tplModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveTemplate()">💾 保存入库</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="acModal" onclick="closeModal('acModal')">
     <div class="ac-cow-wrapper">
         <div class="ac-cow-container">
@@ -80,7 +93,7 @@
     <div class="modal-card" style="text-align: center; max-width: 350px;">
         <div style="font-size:3rem; margin-bottom:10px;">🗑️</div>
         <h3 style="margin:0 0 10px 0;">确定删除？</h3>
-        <div class="input-row">
+        <div class="input-row" style="display:flex; gap:10px;">
             <button class="btn btn-outline" style="flex:1;" onclick="closeModal('confirmModal')">取消</button>
             <button class="btn btn-danger" style="flex:1;" id="confirmDeleteBtn">删除</button>
         </div>
@@ -244,16 +257,17 @@
         </div>
     </main>
 
-    <!-- ====== 新增抽屉组件部分 ====== -->
     <div class="drawer-toggle-btn" onclick="toggleDrawer()">🛠️ 抽屉</div>
     <div class="template-drawer" id="tplDrawer">
         <div class="drawer-header">
-            <h3 style="margin: 0; color: var(--primary);">🧰 核心武器库</h3>
-            <span class="close-drawer" onclick="toggleDrawer()">✕</span>
+            <h3 style="margin: 0; color: var(--primary);">🧰 我的武器库</h3>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="btn-copy" style="background:var(--primary); color:white;" onclick="openTplModal()">➕ 新增</button>
+                <span class="close-drawer" onclick="toggleDrawer()">✕</span>
+            </div>
         </div>
         <div id="tplList" class="tpl-list"></div>
     </div>
-    <!-- =========================== -->
 
     <div class="footer-msg">你要考虑这是不是你此生仅有的机会。</div>
 </div>
