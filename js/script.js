@@ -1,80 +1,94 @@
 // 全局错误捕获
 window.onerror = function(msg, url, line) { console.error("Sys Error:", msg); return false; };
 
-const DB_KEY = "algo_v17_nirvana"; 
+// 🔑 【数据恢复核心】：钥匙换回你最开始的 12 号！你的老数据全都在这里！
+const DB_KEY = "algo_v12_clean"; 
 
-// 🗺️ 绝对硬核的 45 天主线剧情库 (我已经帮你配好了前 7 天洛谷原题)
+// 🗺️ 真正的 45 天地狱主线剧情 (高强度，直指省赛/天梯赛)
 const ROADMAP = [
     { 
         day: 1, 
-        title: "🗡️ STL 唤醒：优先队列与集合", 
-        desc: "天梯赛 L2 核心抢分武器。复习 priority_queue 和 set 的使用。", 
+        title: "🗡️ STL 唤醒：优先队列、Set与Map的极致应用", 
+        desc: "天梯赛 L2 核心抢分武器。别自己写排序了，把 STL 用到肌肉记忆。", 
         topic: 1, // 数据结构
         tasks: [
-            { name: "洛谷 P1090 合并果子", link: "https://www.luogu.com.cn/problem/P1090", rating: "luogu_orange" },
-            { name: "洛谷 P1102 A-B 数对", link: "https://www.luogu.com.cn/problem/P1102", rating: "luogu_yellow" }
+            { name: "洛谷 P1090 合并果子 (优先队列板子)", link: "https://www.luogu.com.cn/problem/P1090", rating: "luogu_orange" },
+            { name: "洛谷 P1102 A-B 数对 (Map/二分)", link: "https://www.luogu.com.cn/problem/P1102", rating: "luogu_orange" },
+            { name: "洛谷 P3613 寄包柜 (Map二维应用)", link: "https://www.luogu.com.cn/problem/P3613", rating: "luogu_orange" },
+            { name: "洛谷 P5250 超市物流 (Set综合挑战)", link: "https://www.luogu.com.cn/problem/P5250", rating: "luogu_yellow" }
         ] 
     },
     { 
         day: 2, 
-        title: "🩸 暴力美学：BFS 与隐式图", 
-        desc: "蓝桥杯的绝对真理：遇事不决先搜索。学会把状态当作图的节点。", 
+        title: "🩸 暴力美学：BFS 与隐式图搜索", 
+        desc: "蓝桥杯的绝对真理。学会把状态当作图的节点，注意判重数组的细节。", 
         topic: 0, // 思维/搜索
         tasks: [
-            { name: "洛谷 P1443 马的遍历 (BFS板子)", link: "https://www.luogu.com.cn/problem/P1443", rating: "luogu_yellow" },
-            { name: "洛谷 P1135 奇怪的电梯", link: "https://www.luogu.com.cn/problem/P1135", rating: "luogu_yellow" }
+            { name: "洛谷 P1443 马的遍历 (BFS基础板子)", link: "https://www.luogu.com.cn/problem/P1443", rating: "luogu_yellow" },
+            { name: "洛谷 P1135 奇怪的电梯 (一维BFS)", link: "https://www.luogu.com.cn/problem/P1135", rating: "luogu_yellow" },
+            { name: "洛谷 P1162 填涂颜色 (连通块BFS)", link: "https://www.luogu.com.cn/problem/P1162", rating: "luogu_orange" },
+            { name: "洛谷 P1032 字串变换 (字符串隐式图BFS)", link: "https://www.luogu.com.cn/problem/P1032", rating: "luogu_green" }
         ] 
     },
     { 
         day: 3, 
-        title: "🕸️ 图论起手：并查集与连通块", 
-        desc: "代码最短、拿分最稳的算法。务必背熟 find 和 merge 模板。", 
+        title: "🕸️ 图论起手：并查集与连通块的变形", 
+        desc: "代码最短、拿分最稳的算法。今天必须拿下种类并查集！", 
         topic: 2, // 图论
         tasks: [
-            { name: "洛谷 P3367 并查集(模板)", link: "https://www.luogu.com.cn/problem/P3367", rating: "luogu_orange" },
-            { name: "洛谷 P1525 关押罪犯(挑战)", link: "https://www.luogu.com.cn/problem/P1525", rating: "luogu_green" }
+            { name: "洛谷 P3367 并查集 (默写板子)", link: "https://www.luogu.com.cn/problem/P3367", rating: "luogu_orange" },
+            { name: "洛谷 P1551 关押罪犯 (贪心+种类并查集)", link: "https://www.luogu.com.cn/problem/P1551", rating: "luogu_green" },
+            { name: "洛谷 P1892 团伙 (敌人的敌人是朋友)", link: "https://www.luogu.com.cn/problem/P1892", rating: "luogu_yellow" },
+            { name: "洛谷 P2024 食物链 (经典种类并查集挑战)", link: "https://www.luogu.com.cn/problem/P2024", rating: "luogu_blue" }
         ] 
     },
     { 
         day: 4, 
-        title: "🕸️ 斩断迷惘：最短路 Dijkstra", 
-        desc: "不要用 SPFA 骗分了，把 Dijkstra + 堆优化 敲出肌肉记忆！", 
+        title: "🕸️ 斩断迷惘：最短路 Dijkstra 堆优化", 
+        desc: "抛弃 SPFA，把 Dijkstra 敲进肌肉记忆，学会建反图。", 
         topic: 2, // 图论
         tasks: [
-            { name: "洛谷 P4779 单源最短路径(标准模板)", link: "https://www.luogu.com.cn/problem/P4779", rating: "luogu_yellow" },
-            { name: "洛谷 P1339 弱化版", link: "https://www.luogu.com.cn/problem/P1339", rating: "luogu_orange" }
+            { name: "洛谷 P4779 单源最短路径 (默写板子)", link: "https://www.luogu.com.cn/problem/P4779", rating: "luogu_yellow" },
+            { name: "洛谷 P1339 热浪 (基础应用)", link: "https://www.luogu.com.cn/problem/P1339", rating: "luogu_orange" },
+            { name: "洛谷 P1629 邮递员送信 (正反图最短路)", link: "https://www.luogu.com.cn/problem/P1629", rating: "luogu_yellow" },
+            { name: "洛谷 P1144 最短路计数 (最短路变体)", link: "https://www.luogu.com.cn/problem/P1144", rating: "luogu_green" }
         ] 
     },
     { 
         day: 5, 
         title: "💡 梦的开始：背包动态规划", 
-        desc: "如果只学一种 DP，那必须是背包。搞懂 01背包 的一维空间优化。", 
+        desc: "搞懂 01背包的一维优化原理。这是所有 DP 的祖宗。", 
         topic: 4, // DP
         tasks: [
-            { name: "洛谷 P1048 采药 (01背包)", link: "https://www.luogu.com.cn/problem/P1048", rating: "luogu_orange" },
-            { name: "洛谷 P1616 疯狂的采药 (完全背包)", link: "https://www.luogu.com.cn/problem/P1616", rating: "luogu_yellow" }
+            { name: "洛谷 P1048 采药 (01背包板子)", link: "https://www.luogu.com.cn/problem/P1048", rating: "luogu_orange" },
+            { name: "洛谷 P1616 疯狂的采药 (完全背包，注意不开longlong见祖宗)", link: "https://www.luogu.com.cn/problem/P1616", rating: "luogu_yellow" },
+            { name: "洛谷 P1757 通天之分组背包", link: "https://www.luogu.com.cn/problem/P1757", rating: "luogu_yellow" },
+            { name: "洛谷 P1049 装箱问题 (背包求体积)", link: "https://www.luogu.com.cn/problem/P1049", rating: "luogu_orange" }
         ] 
     },
     { 
         day: 6, 
         title: "🌲 掌控区间：树状数组", 
-        desc: "比线段树好写 10 倍。解决单点修改、区间查询的利器。", 
+        desc: "比线段树好写，常数极小。务必搞懂 lowbit 原理。", 
         topic: 1, // 数据结构
         tasks: [
-            { name: "洛谷 P3374 树状数组 1 (模板)", link: "https://www.luogu.com.cn/problem/P3374", rating: "luogu_yellow" }
+            { name: "洛谷 P3374 树状数组 1 (单点修改+区间查询)", link: "https://www.luogu.com.cn/problem/P3374", rating: "luogu_yellow" },
+            { name: "洛谷 P3368 树状数组 2 (区间修改+单点查询)", link: "https://www.luogu.com.cn/problem/P3368", rating: "luogu_yellow" },
+            { name: "洛谷 P1908 逆序对 (归并/树状数组挑战)", link: "https://www.luogu.com.cn/problem/P1908", rating: "luogu_green" }
         ] 
     },
     { 
         day: 7, 
-        title: "🔥 极限手速：贪心与模拟", 
-        desc: "第一周结营！抛开高级板子，用最朴素的思维刚一道思维题。", 
+        title: "🔥 极限手速：贪心与模拟大练兵", 
+        desc: "第一周结营大考！丢掉所有高级板子，纯靠思维和细心。", 
         topic: 0, // 思维
         tasks: [
-            { name: "洛谷 P1080 铺地毯", link: "https://www.luogu.com.cn/problem/P1080", rating: "luogu_orange" },
-            { name: "洛谷 P1208 国王游戏", link: "https://www.luogu.com.cn/problem/P1208", rating: "luogu_green" }
+            { name: "洛谷 P1080 国王游戏 (贪心+高精度挑战)", link: "https://www.luogu.com.cn/problem/P1080", rating: "luogu_green" },
+            { name: "洛谷 P1094 纪念品分组 (双指针贪心)", link: "https://www.luogu.com.cn/problem/P1094", rating: "luogu_orange" },
+            { name: "洛谷 P1056 排座椅 (天梯赛典型模拟排序)", link: "https://www.luogu.com.cn/problem/P1056", rating: "luogu_yellow" },
+            { name: "洛谷 P2670 笨小猴 (扫雷经典模拟)", link: "https://www.luogu.com.cn/problem/P2670", rating: "luogu_orange" }
         ] 
     }
-    // 兄弟，第8天以后的任务，你可以等做完这7天，自己照葫芦画瓢加进来！
 ];
 
 const RATINGS = {
@@ -99,7 +113,6 @@ const QUOTES = [
 
 const FORTUNES = ["大吉 - 宜推进主线任务", "中吉 - 宜复习武器库", "平 - 戒骄戒躁"];
 
-// ⚡ 新增 questDay 属性
 let appData = { xp: 0, level: 1, maxRating: 0, todos: [], logs: [], targets: [], history: [], templates: [], questDay: 1 };
 let timerState = { isRunning: false, startTime: 0, totalTime: 0, date: "" };
 let timerInterval = null; let quoteIdx = 0; let currentTheme = { p: '#4f46e5', a: '#db2777' }; let pendingDeleteAction = null; 
@@ -144,7 +157,6 @@ function checkDailySettlement() {
     }
 }
 
-// 🗺️ 渲染主线任务核心逻辑
 function renderQuest() {
     if(!appData.questDay) appData.questDay = 1;
     const currentQuestIndex = appData.questDay - 1;
@@ -165,7 +177,7 @@ function renderQuest() {
     q.tasks.forEach((t, i) => {
         tasksHtml += `
             <div style="background:var(--bg); border:1px solid var(--border); padding:10px 15px; border-radius:8px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-weight:bold;">${t.name}</div>
+                <div style="font-weight:bold; font-size: 0.9rem;">${t.name}</div>
                 <div style="display:flex; gap:10px;">
                     <a href="${t.link}" target="_blank" class="btn-go-ac" style="background:var(--card); border:1px solid var(--primary); color:var(--primary); text-decoration:none;">🔗 传送</a>
                     <button class="btn-go-ac" style="background:var(--primary); color:white;" onclick="quickSubmitQuest('${t.name}', '${t.link}', '${t.rating}', ${q.topic})">⚔️ 斩杀</button>
@@ -193,11 +205,7 @@ function quickSubmitQuest(name, link, rating, topic) {
 
 function advanceQuest() {
     if(confirm("你确定今天的主线题目都已经亲手 AC 了吗？不要骗自己！")) {
-        appData.questDay++;
-        saveData();
-        renderQuest();
-        fireBloodConfetti();
-        showToast("🎉 主线突破！能力值暴涨！", "success");
+        appData.questDay++; saveData(); renderQuest(); fireBloodConfetti(); showToast("🎉 主线突破！能力值暴涨！", "success");
     }
 }
 
@@ -232,6 +240,22 @@ function submitAC() {
     appData.xp += finalXp; const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1; if(nextLv > appData.level) { appData.level = nextLv; setTimeout(()=> showToast(`🎉 升级啦 LV.${nextLv}`, "success"), 1500); }
     document.getElementById('probName').value = ''; document.getElementById('probLink').value = ''; document.getElementById('solLink').value = ''; document.getElementById('linkedTaskId').value = '';
     saveData(); openModal('acModal');
+}
+
+function processBatch() {
+    const text = document.getElementById('batchInput').value; if (!text.trim()) return showToast("请输入内容", "error");
+    const lines = text.split('\n'); let count = 0;
+    for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim(); if (!line) continue;
+        let match = line.match(/^(\d+)\s+(.+)$/); let validKey = "1200"; let rawName = "";
+        if (match) { const num = parseInt(match[1]); rawName = match[2]; if (num >= 2200) validKey = "2200"; else if (num >= 2000) validKey = "2000"; else if (num >= 1750) validKey = "1750"; else if (num >= 1500) validKey = "1500"; } 
+        else { const charMatch = line.match(/^([红橙黄绿蓝紫黑]|unrated)\s+(.+)$/); if (charMatch) { const colorMap = {'红':'luogu_red', '橙':'luogu_orange', '黄':'luogu_yellow', '绿':'luogu_green', '蓝':'luogu_blue', '紫':'luogu_purple', '黑':'luogu_black', 'unrated':'unrated'}; validKey = colorMap[charMatch[1]] || "unrated"; rawName = charMatch[2]; } else continue; }
+        let finalName = rawName; let finalLink = ""; if (rawName.includes("|")) { let splitParts = rawName.split("|"); finalName = splitParts[0].trim(); finalLink = splitParts[1].trim(); }
+        const config = RATINGS[validKey] || RATINGS["unrated"];
+        appData.logs.unshift({ id: Date.now() + i, date: getRealDate(), name: finalName, ratingVal: validKey, topic: 0, link: finalLink, sol: "", xp: config.xp });
+        appData.xp += config.xp; count++;
+    }
+    if (count > 0) { const nextLv = Math.floor(Math.sqrt(appData.xp / 50)) + 1; if (nextLv > appData.level) appData.level = nextLv; saveData(); closeModal('batchModal'); document.getElementById('batchInput').value = ""; showToast(`⚡ 导入 ${count} 题`, "success"); fireConfetti(); } else showToast("格式错误", "error");
 }
 
 function renderUI() {
